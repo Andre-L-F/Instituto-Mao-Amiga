@@ -526,12 +526,15 @@ const styles = StyleSheet.create({
   },
 
   botaoCadastrar: {
-    backgroundColor: '#2E7D32',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
+   backgroundColor: '#2E7D32',
+   paddingVertical: 14,
+   borderRadius: 10,
+   minHeight: 44,
+   justifyContent: 'center',
+   alignItems: 'center',
+   marginBottom: 20,
   },
+
 
   textoBotaoCadastrar: {
     color: '#FFFFFF',
