@@ -40,23 +40,97 @@ const pontosMock = [
 ];
 
 export default function App() {
+  // Controle da tela atual
   const [tela, setTela] = useState('lista');
+
+  // Ponto selecionado para visualizar os detalhes
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
 
   // Texto digitado no filtro
   const [busca, setBusca] = useState('');
 
+  // Campos do formulário de doação
+  const [tipoItem, setTipoItem] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [pontoDestino, setPontoDestino] = useState('');
+
+  // Mensagem de erro da quantidade
+  const [erroQuantidade, setErroQuantidade] = useState('');
+
+  // Abre a tela de detalhes
   function abrirDetalhe(ponto) {
     setPontoSelecionado(ponto);
     setTela('detalhe');
   }
 
+  // Abre a tela de cadastro
+  function abrirCadastro() {
+    setTela('cadastro');
+  }
+
+  // Volta para a tela principal
   function voltar() {
     setPontoSelecionado(null);
     setTela('lista');
   }
 
-  // FILTRO
+  // Validação da quantidade
+  function alterarQuantidade(texto) {
+    setQuantidade(texto);
+
+    // Se o campo estiver vazio, remove o erro
+    if (texto === '') {
+      setErroQuantidade('');
+      return;
+    }
+
+    // Verifica se contém somente números
+    if (!/^\d+$/.test(texto)) {
+      setErroQuantidade(
+        'A quantidade deve conter apenas números.'
+      );
+    } else {
+      setErroQuantidade('');
+    }
+  }
+
+  // Validação e envio do formulário
+  function cadastrarDoacao() {
+    // Verifica se todos os campos foram preenchidos
+    if (!tipoItem || !quantidade || !pontoDestino) {
+      return;
+    }
+
+    // Verifica novamente se a quantidade contém apenas números
+    if (!/^\d+$/.test(quantidade)) {
+      setErroQuantidade(
+        'A quantidade deve conter apenas números.'
+      );
+      return;
+    }
+
+    /*
+      Nesta atividade os dados não serão salvos.
+
+      O objetivo é somente construir o formulário
+      e fazer a validação dos campos.
+
+      O salvamento ficará para uma atividade futura.
+    */
+
+    alert('Doação cadastrada com sucesso!');
+
+    // Limpa o formulário
+    setTipoItem('');
+    setQuantidade('');
+    setPontoDestino('');
+    setErroQuantidade('');
+
+    // Volta para a tela principal
+    setTela('lista');
+  }
+
+  // Filtro dos pontos
   const pontosFiltrados = pontosMock.filter((ponto) => {
     const textoBusca = busca.toLowerCase();
 
@@ -68,7 +142,106 @@ export default function App() {
     );
   });
 
+  // ============================================================
+  // TELA DE CADASTRO
+  // ============================================================
+
+  if (tela === 'cadastro') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.detalheContainer}>
+
+          <TouchableOpacity
+            style={styles.botaoVoltar}
+            onPress={voltar}
+          >
+            <Text style={styles.textoVoltar}>
+              ← Voltar
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.nomeDetalhe}>
+            Cadastro de doação
+          </Text>
+
+          <Text style={styles.label}>
+            Tipo do item
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Ex.: alimentos, roupas, higiene"
+            placeholderTextColor="#888"
+            value={tipoItem}
+            onChangeText={setTipoItem}
+          />
+
+          <Text style={styles.label}>
+            Quantidade
+          </Text>
+
+          <TextInput
+            style={[
+              styles.input,
+              erroQuantidade !== '' && styles.inputErro,
+            ]}
+            placeholder="Digite a quantidade"
+            placeholderTextColor="#888"
+            value={quantidade}
+            onChangeText={alterarQuantidade}
+            keyboardType="numeric"
+          />
+
+          {erroQuantidade !== '' && (
+            <Text style={styles.erro}>
+              {erroQuantidade}
+            </Text>
+          )}
+
+          <Text style={styles.label}>
+            Ponto de destino
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Ex.: Ponto Central"
+            placeholderTextColor="#888"
+            value={pontoDestino}
+            onChangeText={setPontoDestino}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.botaoCadastrar,
+              (
+                !tipoItem ||
+                !quantidade ||
+                !pontoDestino ||
+                erroQuantidade !== ''
+              ) && styles.botaoDesabilitado,
+            ]}
+            onPress={cadastrarDoacao}
+            disabled={
+              !tipoItem ||
+              !quantidade ||
+              !pontoDestino ||
+              erroQuantidade !== ''
+            }
+          >
+            <Text style={styles.textoBotaoCadastrar}>
+              Cadastrar doação
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // ============================================================
   // TELA DE DETALHES
+  // ============================================================
+
   if (tela === 'detalhe' && pontoSelecionado) {
     return (
       <KeyboardAvoidingView
@@ -124,7 +297,10 @@ export default function App() {
     );
   }
 
+  // ============================================================
   // TELA PRINCIPAL
+  // ============================================================
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -202,8 +378,94 @@ export default function App() {
         }
       />
     </KeyboardAvoidingView>
+      data={pontosFiltrados}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.content}
+
+      ListHeaderComponent={
+        <View>
+
+          <Text style={styles.titulo}>
+            Instituto Mão Amiga
+          </Text>
+
+          <Text style={styles.subtitulo}>
+            Pontos de coleta e distribuição
+          </Text>
+
+          {/* BOTÃO PARA CADASTRAR DOAÇÃO */}
+
+          <TouchableOpacity
+            style={styles.botaoCadastrar}
+            onPress={abrirCadastro}
+          >
+            <Text style={styles.textoBotaoCadastrar}>
+              + Cadastrar doação
+            </Text>
+          </TouchableOpacity>
+
+          {/* CAMPO DE BUSCA */}
+
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar ponto..."
+            placeholderTextColor="#888"
+            value={busca}
+            onChangeText={setBusca}
+          />
+
+          <Text style={styles.resultados}>
+            {pontosFiltrados.length} ponto(s) encontrado(s)
+          </Text>
+
+        </View>
+      }
+
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => abrirDetalhe(item)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.nome}>
+            {item.nome}
+          </Text>
+
+          <Text style={styles.endereco}>
+            📍 {item.endereco}
+          </Text>
+
+          <Text style={styles.horario}>
+            🕐 {item.horario}
+          </Text>
+
+          <Text style={styles.verDetalhes}>
+            Toque para ver detalhes →
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      ListEmptyComponent={
+        <View style={styles.semResultados}>
+
+          <Text style={styles.semResultadosTexto}>
+            Nenhum ponto encontrado.
+          </Text>
+
+          <Text style={styles.semResultadosSubtexto}>
+            Tente pesquisar por outro nome, endereço ou tipo de
+            doação.
+          </Text>
+
+        </View>
+      }
+    />
   );
 }
+
+// ============================================================
+// ESTILOS
+// ============================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -238,6 +500,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     backgroundColor: '#F9FFF8',
+    marginBottom: 10,
+  },
+
+  inputErro: {
+    borderColor: '#D32F2F',
+  },
+
+  erro: {
+    color: '#D32F2F',
+    fontSize: 14,
+    marginTop: -5,
     marginBottom: 10,
   },
 
@@ -334,5 +607,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555555',
     lineHeight: 24,
+  },
+
+  botaoCadastrar: {
+   backgroundColor: '#2E7D32',
+   paddingVertical: 14,
+   borderRadius: 10,
+   minHeight: 44,
+   justifyContent: 'center',
+   alignItems: 'center',
+   marginBottom: 20,
+  },
+
+
+  textoBotaoCadastrar: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  botaoDesabilitado: {
+    backgroundColor: '#A5D6A7',
   },
 });
