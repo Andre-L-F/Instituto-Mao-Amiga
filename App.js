@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 import {
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -242,48 +244,56 @@ export default function App() {
 
   if (tela === 'detalhe' && pontoSelecionado) {
     return (
-      <ScrollView style={styles.container}>
-        <View style={styles.detalheContainer}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.detalheContainer}>
 
-          <TouchableOpacity
-            style={styles.botaoVoltar}
-            onPress={voltar}
-          >
-            <Text style={styles.textoVoltar}>
-              ← Voltar
+            <TouchableOpacity
+              style={styles.botaoVoltar}
+              onPress={voltar}
+            >
+              <Text style={styles.textoVoltar}>
+                ← Voltar
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.nomeDetalhe}>
+              {pontoSelecionado.nome}
             </Text>
-          </TouchableOpacity>
 
-          <Text style={styles.nomeDetalhe}>
-            {pontoSelecionado.nome}
-          </Text>
+            <Text style={styles.label}>
+              Endereço
+            </Text>
 
-          <Text style={styles.label}>
-            Endereço
-          </Text>
+            <Text style={styles.texto}>
+              📍 {pontoSelecionado.endereco}
+            </Text>
 
-          <Text style={styles.texto}>
-            📍 {pontoSelecionado.endereco}
-          </Text>
+            <Text style={styles.label}>
+              Dias e horários
+            </Text>
 
-          <Text style={styles.label}>
-            Dias e horários
-          </Text>
+            <Text style={styles.texto}>
+              🕐 {pontoSelecionado.horario}
+            </Text>
 
-          <Text style={styles.texto}>
-            🕐 {pontoSelecionado.horario}
-          </Text>
+            <Text style={styles.label}>
+              O que recebe/distribui
+            </Text>
 
-          <Text style={styles.label}>
-            O que recebe/distribui
-          </Text>
+            <Text style={styles.texto}>
+              {pontoSelecionado.recebeDistribui}
+            </Text>
 
-          <Text style={styles.texto}>
-            {pontoSelecionado.recebeDistribui}
-          </Text>
-
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -292,8 +302,82 @@ export default function App() {
   // ============================================================
 
   return (
-    <FlatList
+    <KeyboardAvoidingView
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <FlatList
+        style={styles.container}
+        data={pontosFiltrados}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+        }
+
+        ListHeaderComponent={
+          <View>
+            <Text style={styles.titulo}>
+              Instituto Mão Amiga
+            </Text>
+
+            <Text style={styles.subtitulo}>
+              Pontos de coleta e distribuição
+            </Text>
+
+            {/* CAMPO DE BUSCA */}
+            <TextInput
+              style={styles.input}
+              placeholder="Buscar ponto..."
+              placeholderTextColor="#888"
+              value={busca}
+              onChangeText={setBusca}
+            />
+
+            <Text style={styles.resultados}>
+              {pontosFiltrados.length} ponto(s) encontrado(s)
+            </Text>
+          </View>
+        }
+
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => abrirDetalhe(item)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.nome}>
+              {item.nome}
+            </Text>
+
+            <Text style={styles.endereco}>
+              📍 {item.endereco}
+            </Text>
+
+            <Text style={styles.horario}>
+              🕐 {item.horario}
+            </Text>
+
+            <Text style={styles.verDetalhes}>
+              Toque para ver detalhes →
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        ListEmptyComponent={
+          <View style={styles.semResultados}>
+            <Text style={styles.semResultadosTexto}>
+              Nenhum ponto encontrado.
+            </Text>
+
+            <Text style={styles.semResultadosSubtexto}>
+              Tente pesquisar por outro nome, endereço ou tipo de doação.
+            </Text>
+          </View>
+        }
+      />
+    </KeyboardAvoidingView>
       data={pontosFiltrados}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.content}
