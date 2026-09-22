@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   FlatList,
@@ -39,6 +40,9 @@ const pontosMock = [
   },
 ];
 
+const CHAVE_BUSCA = '@compre_bem:ultima_busca';
+const CHAVE_DOACAO = '@compre_bem:cadastro_doacao';
+
 export default function App() {
   // Controle da tela atual
   const [tela, setTela] = useState('lista');
@@ -46,18 +50,68 @@ export default function App() {
   // Ponto selecionado para visualizar os detalhes
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
 
-  // Texto digitado no filtro
+  // Busca
   const [busca, setBusca] = useState('');
 
-  // Campos do formulário de doação
+  // Formulário de doação
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [pontoDestino, setPontoDestino] = useState('');
 
-  // Mensagem de erro da quantidade
   const [erroQuantidade, setErroQuantidade] = useState('');
+  const [mensagem, setMensagem] = useState('');
 
-  // Abre a tela de detalhes
+  // CARREGAR A ÚLTIMA BUSCA
+  useEffect(() => {
+    async function carregarBusca() {
+      try {
+        const buscaSalva = await AsyncStorage.getItem(CHAVE_BUSCA);
+
+        if (buscaSalva !== null) {
+          setBusca(buscaSalva);
+        }
+      } catch (erro) {
+        console.log('Erro ao carregar busca:', erro);
+      }
+    }
+
+    carregarBusca();
+  }, []);
+
+  // SALVAR A BUSCA
+  useEffect(() => {
+    async function salvarBusca() {
+      try {
+        await AsyncStorage.setItem(CHAVE_BUSCA, busca);
+      } catch (erro) {
+        console.log('Erro ao salvar busca:', erro);
+      }
+    }
+
+    salvarBusca();
+  }, [busca]);
+
+  // CARREGAR O CADASTRO DE DOAÇÃO
+  useEffect(() => {
+    async function carregarDoacao() {
+      try {
+        const doacaoSalva = await AsyncStorage.getItem(CHAVE_DOACAO);
+
+        if (doacaoSalva !== null) {
+          const doacao = JSON.parse(doacaoSalva);
+
+          setTipoItem(doacao.tipoItem || '');
+          setQuantidade(doacao.quantidade || '');
+          setPontoDestino(doacao.pontoDestino || '');
+        }
+      } catch (erro) {
+        console.log('Erro ao carregar doação:', erro);
+      }
+    }
+
+    carregarDoacao();
+  }, []);
+
   function abrirDetalhe(ponto) {
     setPontoSelecionado(ponto);
     setTela('detalhe');
@@ -74,63 +128,62 @@ export default function App() {
     setTela('lista');
   }
 
-  // Validação da quantidade
+  // VALIDAÇÃO DA QUANTIDADE
   function alterarQuantidade(texto) {
     setQuantidade(texto);
+    setMensagem('');
 
-    // Se o campo estiver vazio, remove o erro
-    if (texto === '') {
-      setErroQuantidade('');
-      return;
-    }
-
-    // Verifica se contém somente números
-    if (!/^\d+$/.test(texto)) {
-      setErroQuantidade(
-        'A quantidade deve conter apenas números.'
-      );
+    if (texto !== '' && !/^\d+$/.test(texto)) {
+      setErroQuantidade('A quantidade deve conter apenas números.');
     } else {
       setErroQuantidade('');
     }
   }
 
-  // Validação e envio do formulário
-  function cadastrarDoacao() {
-    // Verifica se todos os campos foram preenchidos
-    if (!tipoItem || !quantidade || !pontoDestino) {
+  // CADASTRAR E SALVAR A DOAÇÃO
+  async function cadastrarDoacao() {
+    setMensagem('');
+
+    if (!tipoItem.trim()) {
+      setMensagem('Informe o tipo do item.');
       return;
     }
 
-    // Verifica novamente se a quantidade contém apenas números
+    if (!quantidade.trim()) {
+      setMensagem('Informe a quantidade.');
+      return;
+    }
+
     if (!/^\d+$/.test(quantidade)) {
-      setErroQuantidade(
-        'A quantidade deve conter apenas números.'
-      );
+      setErroQuantidade('A quantidade deve conter apenas números.');
       return;
     }
 
-    /*
-      Nesta atividade os dados não serão salvos.
+    if (!pontoDestino.trim()) {
+      setMensagem('Informe o ponto de destino.');
+      return;
+    }
 
-      O objetivo é somente construir o formulário
-      e fazer a validação dos campos.
+    const doacao = {
+      tipoItem,
+      quantidade,
+      pontoDestino,
+    };
 
-      O salvamento ficará para uma atividade futura.
-    */
+    try {
+      await AsyncStorage.setItem(
+        CHAVE_DOACAO,
+        JSON.stringify(doacao)
+      );
 
-    alert('Doação cadastrada com sucesso!');
-
-    // Limpa o formulário
-    setTipoItem('');
-    setQuantidade('');
-    setPontoDestino('');
-    setErroQuantidade('');
-
-    // Volta para a tela principal
-    setTela('lista');
+      setMensagem('Doação cadastrada e salva com sucesso!');
+    } catch (erro) {
+      console.log('Erro ao salvar doação:', erro);
+      setMensagem('Não foi possível salvar a doação.');
+    }
   }
 
-  // Filtro dos pontos
+  // FILTRO
   const pontosFiltrados = pontosMock.filter((ponto) => {
     const textoBusca = busca.toLowerCase();
 
@@ -142,18 +195,25 @@ export default function App() {
     );
   });
 
-  // ============================================================
   // TELA DE CADASTRO
-  // ============================================================
-
   if (tela === 'cadastro') {
     return (
-      <ScrollView style={styles.container}>
-        <View style={styles.detalheContainer}>
-
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.detalheContainer}
+          keyboardShouldPersistTaps="handled"
+        >
           <TouchableOpacity
             style={styles.botaoVoltar}
-            onPress={voltar}
+            onPress={() => {
+              setMensagem('');
+              setErroQuantidade('');
+              setTela('lista');
+            }}
           >
             <Text style={styles.textoVoltar}>
               ← Voltar
@@ -161,7 +221,7 @@ export default function App() {
           </TouchableOpacity>
 
           <Text style={styles.nomeDetalhe}>
-            Cadastro de doação
+            Cadastrar doação
           </Text>
 
           <Text style={styles.label}>
@@ -170,10 +230,13 @@ export default function App() {
 
           <TextInput
             style={styles.input}
-            placeholder="Ex.: alimentos, roupas, higiene"
+            placeholder="Ex.: alimentos"
             placeholderTextColor="#888"
             value={tipoItem}
-            onChangeText={setTipoItem}
+            onChangeText={(texto) => {
+              setTipoItem(texto);
+              setMensagem('');
+            }}
           />
 
           <Text style={styles.label}>
@@ -181,11 +244,8 @@ export default function App() {
           </Text>
 
           <TextInput
-            style={[
-              styles.input,
-              erroQuantidade !== '' && styles.inputErro,
-            ]}
-            placeholder="Digite a quantidade"
+            style={styles.input}
+            placeholder="Ex.: 10"
             placeholderTextColor="#888"
             value={quantidade}
             onChangeText={alterarQuantidade}
@@ -207,38 +267,37 @@ export default function App() {
             placeholder="Ex.: Ponto Central"
             placeholderTextColor="#888"
             value={pontoDestino}
-            onChangeText={setPontoDestino}
+            onChangeText={(texto) => {
+              setPontoDestino(texto);
+              setMensagem('');
+            }}
           />
 
           <TouchableOpacity
-            style={[
-              styles.botaoCadastrar,
-              (
-                !tipoItem ||
-                !quantidade ||
-                !pontoDestino ||
-                erroQuantidade !== ''
-              ) && styles.botaoDesabilitado,
-            ]}
+            style={styles.botaoCadastrar}
             onPress={cadastrarDoacao}
-            disabled={
-              !tipoItem ||
-              !quantidade ||
-              !pontoDestino ||
-              erroQuantidade !== ''
-            }
           >
-            <Text style={styles.textoBotaoCadastrar}>
+            <Text style={styles.textoBotao}>
               Cadastrar doação
             </Text>
           </TouchableOpacity>
 
-        </View>
-      </ScrollView>
+          {mensagem !== '' && (
+            <Text
+              style={
+                mensagem.includes('sucesso')
+                  ? styles.sucesso
+                  : styles.erro
+              }
+            >
+              {mensagem}
+            </Text>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
-  // ============================================================
   // TELA DE DETALHES
   // ============================================================
 
@@ -326,7 +385,15 @@ export default function App() {
               Pontos de coleta e distribuição
             </Text>
 
-            {/* CAMPO DE BUSCA */}
+            <TouchableOpacity
+              style={styles.botaoCadastrar}
+              onPress={() => setTela('cadastro')}
+            >
+              <Text style={styles.textoBotao}>
+                Cadastrar doação
+              </Text>
+            </TouchableOpacity>
+
             <TextInput
               style={styles.input}
               placeholder="Buscar ponto..."
@@ -610,23 +677,29 @@ const styles = StyleSheet.create({
   },
 
   botaoCadastrar: {
-   backgroundColor: '#2E7D32',
-   paddingVertical: 14,
-   borderRadius: 10,
-   minHeight: 44,
-   justifyContent: 'center',
-   alignItems: 'center',
-   marginBottom: 20,
+    backgroundColor: '#2E7D32',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
   },
 
-
-  textoBotaoCadastrar: {
+  textoBotao: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
 
-  botaoDesabilitado: {
-    backgroundColor: '#A5D6A7',
+  erro: {
+    color: '#C62828',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+
+  sucesso: {
+    color: '#2E7D32',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginTop: 10,
   },
 });
