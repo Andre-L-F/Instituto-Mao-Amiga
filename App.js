@@ -44,7 +44,10 @@ const CHAVE_BUSCA = '@compre_bem:ultima_busca';
 const CHAVE_DOACAO = '@compre_bem:cadastro_doacao';
 
 export default function App() {
+  // Controle da tela atual
   const [tela, setTela] = useState('lista');
+
+  // Ponto selecionado para visualizar os detalhes
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
 
   // Busca
@@ -114,6 +117,12 @@ export default function App() {
     setTela('detalhe');
   }
 
+  // Abre a tela de cadastro
+  function abrirCadastro() {
+    setTela('cadastro');
+  }
+
+  // Volta para a tela principal
   function voltar() {
     setPontoSelecionado(null);
     setTela('lista');
@@ -290,6 +299,8 @@ export default function App() {
   }
 
   // TELA DE DETALHES
+  // ============================================================
+
   if (tela === 'detalhe' && pontoSelecionado) {
     return (
       <KeyboardAvoidingView
@@ -345,7 +356,10 @@ export default function App() {
     );
   }
 
+  // ============================================================
   // TELA PRINCIPAL
+  // ============================================================
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -431,8 +445,94 @@ export default function App() {
         }
       />
     </KeyboardAvoidingView>
+      data={pontosFiltrados}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.content}
+
+      ListHeaderComponent={
+        <View>
+
+          <Text style={styles.titulo}>
+            Instituto Mão Amiga
+          </Text>
+
+          <Text style={styles.subtitulo}>
+            Pontos de coleta e distribuição
+          </Text>
+
+          {/* BOTÃO PARA CADASTRAR DOAÇÃO */}
+
+          <TouchableOpacity
+            style={styles.botaoCadastrar}
+            onPress={abrirCadastro}
+          >
+            <Text style={styles.textoBotaoCadastrar}>
+              + Cadastrar doação
+            </Text>
+          </TouchableOpacity>
+
+          {/* CAMPO DE BUSCA */}
+
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar ponto..."
+            placeholderTextColor="#888"
+            value={busca}
+            onChangeText={setBusca}
+          />
+
+          <Text style={styles.resultados}>
+            {pontosFiltrados.length} ponto(s) encontrado(s)
+          </Text>
+
+        </View>
+      }
+
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => abrirDetalhe(item)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.nome}>
+            {item.nome}
+          </Text>
+
+          <Text style={styles.endereco}>
+            📍 {item.endereco}
+          </Text>
+
+          <Text style={styles.horario}>
+            🕐 {item.horario}
+          </Text>
+
+          <Text style={styles.verDetalhes}>
+            Toque para ver detalhes →
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      ListEmptyComponent={
+        <View style={styles.semResultados}>
+
+          <Text style={styles.semResultadosTexto}>
+            Nenhum ponto encontrado.
+          </Text>
+
+          <Text style={styles.semResultadosSubtexto}>
+            Tente pesquisar por outro nome, endereço ou tipo de
+            doação.
+          </Text>
+
+        </View>
+      }
+    />
   );
 }
+
+// ============================================================
+// ESTILOS
+// ============================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -467,6 +567,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     backgroundColor: '#F9FFF8',
+    marginBottom: 10,
+  },
+
+  inputErro: {
+    borderColor: '#D32F2F',
+  },
+
+  erro: {
+    color: '#D32F2F',
+    fontSize: 14,
+    marginTop: -5,
     marginBottom: 10,
   },
 
