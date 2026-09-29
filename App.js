@@ -5,7 +5,10 @@ import DetalhePonto from './src/screens/DetalhePonto';
 import CadastroDoacao from './src/screens/CadastroDoacao';
 
 export default function App() {
+  // Controle da tela atual
   const [tela, setTela] = useState('lista');
+
+  // Ponto selecionado para visualizar os detalhes
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
 
   function abrirDetalhe(ponto) {
