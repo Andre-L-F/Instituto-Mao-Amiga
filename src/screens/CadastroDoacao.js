@@ -9,10 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import {
-  carregarDoacao,
-  salvarDoacao,
-} from '../storage/storage';
+import { salvarDoacao } from '../storage/doacoesStorage';
 
 import styles from '../styles/styles';
 
@@ -26,19 +23,7 @@ export default function CadastroDoacao({
   const [erroQuantidade, setErroQuantidade] = useState('');
   const [mensagem, setMensagem] = useState('');
 
-  useEffect(() => {
-    async function buscarDoacaoSalva() {
-      const doacao = await carregarDoacao();
 
-      if (doacao) {
-        setTipoItem(doacao.tipoItem || '');
-        setQuantidade(doacao.quantidade || '');
-        setPontoDestino(doacao.pontoDestino || '');
-      }
-    }
-
-    buscarDoacaoSalva();
-  }, []);
 
   function alterarQuantidade(texto) {
     setQuantidade(texto);
