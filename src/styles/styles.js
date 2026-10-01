@@ -157,6 +157,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 10,
   },
+
+  botaoHistorico: {
+  backgroundColor: '#558B2F',
+  padding: 14,
+  borderRadius: 10,
+  alignItems: 'center',
+  marginBottom: 20,
+  },
 });
 
 export default styles;
