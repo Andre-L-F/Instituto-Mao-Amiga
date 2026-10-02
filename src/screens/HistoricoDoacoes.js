@@ -16,6 +16,7 @@ import styles from '../styles/styles';
 export default function HistoricoDoacoes({
   voltar,
   abrirCadastro,
+  abrirDetalheDoacao,
 }) {
   const [doacoes, setDoacoes] = useState([]);
 
@@ -74,10 +75,15 @@ export default function HistoricoDoacoes({
       <FlatList
         data={doacoes}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ItemDoacao doacao={item} />
-        )}
         contentContainerStyle={styles.content}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => abrirDetalheDoacao(item)}
+          >
+            <ItemDoacao doacao={item} />
+          </TouchableOpacity>
+        )}
         ListHeaderComponent={
           <View>
             <TouchableOpacity
