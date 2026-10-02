@@ -7,6 +7,7 @@ import HistoricoDoacoes from './src/screens/HistoricoDoacoes';
 import DetalheDoacao from './src/screens/DetalheDoacao';
 
 export default function App() {
+  // Controle da tela atual
   const [tela, setTela] = useState('lista');
   const [telaAnterior, setTelaAnterior] = useState('lista');
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
