@@ -165,6 +165,15 @@ const styles = StyleSheet.create({
   alignItems: 'center',
   marginBottom: 20,
   },
+  
+  botaoExcluir: {
+  backgroundColor: '#C62828',
+  padding: 14,
+  borderRadius: 10,
+  alignItems: 'center',
+  marginTop: 30,
+  },
+
 });
 
 export default styles;

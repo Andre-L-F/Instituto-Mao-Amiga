@@ -44,3 +44,23 @@ export async function salvarDoacao(doacao) {
     return null;
   }
 }
+
+export async function excluirDoacao(id) {
+  try {
+    const doacoes = await listarDoacoes();
+
+    const novasDoacoes = doacoes.filter(
+      (doacao) => doacao.id !== id
+    );
+
+    await AsyncStorage.setItem(
+      CHAVE_DOACOES,
+      JSON.stringify(novasDoacoes)
+    );
+
+    return true;
+  } catch (erro) {
+    console.log('Erro ao excluir doacao:', erro);
+    return false;
+  }
+}
