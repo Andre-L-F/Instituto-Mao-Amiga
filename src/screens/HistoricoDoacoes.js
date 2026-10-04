@@ -40,6 +40,26 @@ export default function HistoricoDoacoes({
       .includes(textoBusca.toLowerCase())
   );
 
+  const resumoPorTipo = Object.values(
+    doacoes.reduce((resumo, doacao) => {
+      const tipo = doacao.tipoItem.trim();
+      const quantidade = Number(doacao.quantidade);
+
+      if (!resumo[tipo]) {
+        resumo[tipo] = {
+          tipo,
+          quantidade: 0,
+          doacoes: 0,
+        };
+      }
+
+      resumo[tipo].quantidade += quantidade;
+      resumo[tipo].doacoes += 1;
+
+      return resumo;
+    }, {})
+  ).sort((a, b) => b.quantidade - a.quantidade);
+
   if (doacoes.length === 0) {
     return (
       <KeyboardAvoidingView
@@ -123,6 +143,26 @@ export default function HistoricoDoacoes({
             <Text style={styles.nomeDetalhe}>
               Minhas doações
             </Text>
+
+            <View style={styles.resumo}>
+              <Text style={styles.resumoTitulo}>
+                Resumo das doações
+              </Text>
+
+              <Text style={styles.resumoTotal}>
+                Total de doações: {doacoes.length}
+              </Text>
+
+              {resumoPorTipo.map((item) => (
+                <Text
+                  key={item.tipo}
+                  style={styles.resumoItem}
+                >
+                  {item.tipo}: {item.quantidade} unidades em{' '}
+                  {item.doacoes} doações
+                </Text>
+              ))}
+            </View>
 
             <TextInput
               style={styles.input}
