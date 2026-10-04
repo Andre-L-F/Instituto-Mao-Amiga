@@ -100,9 +100,6 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
 
-  botaoVoltar: {
-    marginBottom: 20,
-  },
 
   textoVoltar: {
     fontSize: 16,
@@ -131,14 +128,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  botaoCadastrar: {
-    backgroundColor: '#2E7D32',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-
   textoBotao: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -158,21 +147,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  botaoHistorico: {
-  backgroundColor: '#558B2F',
+botaoCadastrar: {
+  backgroundColor: '#2E7D32',
+  minHeight: 44,
   padding: 14,
   borderRadius: 10,
   alignItems: 'center',
+  justifyContent: 'center',
   marginBottom: 20,
-  },
-  
-  botaoExcluir: {
-  backgroundColor: '#C62828',
+},
+
+botaoHistorico: {
+  backgroundColor: '#558B2F',
+  minHeight: 44,
   padding: 14,
   borderRadius: 10,
   alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: 20,
+},
+
+botaoExcluir: {
+  backgroundColor: '#C62828',
+  minHeight: 44,
+  padding: 14,
+  borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
   marginTop: 30,
-  },
+},
+
+botaoVoltar: {
+  minHeight: 44,
+  justifyContent: 'center',
+  marginBottom: 20,
+},
 
 });
 
