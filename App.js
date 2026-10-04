@@ -8,9 +8,17 @@ import DetalheDoacao from './src/screens/DetalheDoacao';
 
 export default function App() {
   const [tela, setTela] = useState('lista');
-  const [telaAnterior, setTelaAnterior] = useState('lista');
-  const [pontoSelecionado, setPontoSelecionado] = useState(null);
-  const [doacaoSelecionada, setDoacaoSelecionada] = useState(null);
+  const [telaAnterior, setTelaAnterior] =
+    useState('lista');
+
+  const [pontoSelecionado, setPontoSelecionado] =
+    useState(null);
+
+  const [doacaoSelecionada, setDoacaoSelecionada] =
+    useState(null);
+
+  const [doacaoParaEditar, setDoacaoParaEditar] =
+    useState(null);
 
   function abrirDetalhe(ponto) {
     setPontoSelecionado(ponto);
@@ -18,6 +26,7 @@ export default function App() {
   }
 
   function abrirCadastro(origem = 'lista') {
+    setDoacaoParaEditar(null);
     setTelaAnterior(origem);
     setTela('cadastro');
   }
@@ -31,12 +40,26 @@ export default function App() {
     setTela('detalheDoacao');
   }
 
+  function abrirEdicao(doacao) {
+    setDoacaoParaEditar(doacao);
+    setTelaAnterior('detalheDoacao');
+    setTela('cadastro');
+  }
+
   function voltar() {
     setPontoSelecionado(null);
     setTela('lista');
   }
 
-  function voltarDoCadastro() {
+  function voltarDoCadastro(doacaoAtualizada = null) {
+    if (doacaoAtualizada) {
+      setDoacaoSelecionada(doacaoAtualizada);
+      setDoacaoParaEditar(null);
+      setTela('detalheDoacao');
+      return;
+    }
+
+    setDoacaoParaEditar(null);
     setTela(telaAnterior);
   }
 
@@ -53,6 +76,7 @@ export default function App() {
     return (
       <CadastroDoacao
         voltar={voltarDoCadastro}
+        doacaoParaEditar={doacaoParaEditar}
       />
     );
   }
@@ -79,11 +103,15 @@ export default function App() {
           },
         }}
         voltar={voltarDoDetalheDoacao}
+        editar={abrirEdicao}
       />
     );
   }
 
-  if (tela === 'detalhe' && pontoSelecionado) {
+  if (
+    tela === 'detalhe' &&
+    pontoSelecionado
+  ) {
     return (
       <DetalhePonto
         ponto={pontoSelecionado}

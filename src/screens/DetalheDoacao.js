@@ -5,25 +5,30 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
 } from 'react-native';
 
-import { excluirDoacao } from '../storage/doacoesStorage';
+import {
+  excluirDoacao,
+} from '../storage/doacoesStorage';
 
 import styles from '../styles/styles';
 
 export default function DetalheDoacao({
   route,
   voltar,
+  editar,
 }) {
   const doacao = route.params.doacao;
 
   const data = new Date(doacao.criadoEm);
 
-  const dataFormatada = data.toLocaleString('pt-BR', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-  });
+  const dataFormatada = data.toLocaleString(
+    'pt-BR',
+    {
+      dateStyle: 'full',
+      timeStyle: 'short',
+    }
+  );
 
   function confirmarExclusao() {
     Alert.alert(
@@ -38,9 +43,8 @@ export default function DetalheDoacao({
           text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
-            const excluida = await excluirDoacao(
-              doacao.id
-            );
+            const excluida =
+              await excluirDoacao(doacao.id);
 
             if (excluida) {
               voltar();
@@ -59,7 +63,9 @@ export default function DetalheDoacao({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.detalheContainer}
+      contentContainerStyle={
+        styles.detalheContainer
+      }
     >
       <TouchableOpacity
         style={styles.botaoVoltar}
@@ -105,6 +111,15 @@ export default function DetalheDoacao({
       <Text style={styles.texto}>
         {dataFormatada}
       </Text>
+
+      <TouchableOpacity
+        style={styles.botaoCadastrar}
+        onPress={() => editar(doacao)}
+      >
+        <Text style={styles.textoBotao}>
+          Editar doação
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.botaoExcluir}

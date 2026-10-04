@@ -11,18 +11,25 @@ import {
 } from 'react-native';
 
 import pontosMock from '../data/pontosMock';
-import { carregarBusca, salvarBusca } from '../storage/storage';
+
+import {
+  carregarBusca,
+  salvarBusca,
+} from '../storage/storage';
+
 import styles from '../styles/styles';
 
 export default function ListaPontos({
   abrirDetalhe,
   abrirCadastro,
+  abrirHistorico,
 }) {
   const [busca, setBusca] = useState('');
 
   useEffect(() => {
     async function buscarBuscaSalva() {
       const buscaSalva = await carregarBusca();
+
       setBusca(buscaSalva);
     }
 
@@ -70,10 +77,19 @@ export default function ListaPontos({
 
             <TouchableOpacity
               style={styles.botaoCadastrar}
-              onPress={abrirCadastro}
+              onPress={() => abrirCadastro('lista')}
             >
               <Text style={styles.textoBotao}>
                 Cadastrar doação
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.botaoHistorico}
+              onPress={abrirHistorico}
+            >
+              <Text style={styles.textoBotao}>
+                Minhas doações
               </Text>
             </TouchableOpacity>
 

@@ -9,12 +9,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { salvarDoacao } from '../storage/doacoesStorage';
+import {
+  salvarDoacao,
+  atualizarDoacao,
+} from '../storage/doacoesStorage';
 
 import styles from '../styles/styles';
 
 export default function CadastroDoacao({
   voltar,
+  doacaoParaEditar = null,
 }) {
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
@@ -23,7 +27,19 @@ export default function CadastroDoacao({
   const [erroQuantidade, setErroQuantidade] = useState('');
   const [mensagem, setMensagem] = useState('');
 
+  const modoEdicao = doacaoParaEditar !== null;
 
+  useEffect(() => {
+    if (doacaoParaEditar) {
+      setTipoItem(doacaoParaEditar.tipoItem || '');
+      setQuantidade(doacaoParaEditar.quantidade || '');
+      setPontoDestino(doacaoParaEditar.pontoDestino || '');
+    } else {
+      setTipoItem('');
+      setQuantidade('');
+      setPontoDestino('');
+    }
+  }, [doacaoParaEditar]);
 
   function alterarQuantidade(texto) {
     setQuantidade(texto);
@@ -38,7 +54,7 @@ export default function CadastroDoacao({
     }
   }
 
-  async function cadastrarDoacao() {
+  async function salvar() {
     setMensagem('');
 
     if (!tipoItem.trim()) {
@@ -63,18 +79,52 @@ export default function CadastroDoacao({
       return;
     }
 
-    const doacao = {
-      tipoItem,
-      quantidade,
-      pontoDestino,
+    const dadosDoacao = {
+      tipoItem: tipoItem.trim(),
+      quantidade: quantidade.trim(),
+      pontoDestino: pontoDestino.trim(),
     };
 
-    const salvo = await salvarDoacao(doacao);
+    if (modoEdicao) {
+      const doacaoAtualizada = {
+        ...doacaoParaEditar,
+        ...dadosDoacao,
+      };
 
-    if (salvo) {
+      const atualizada = await atualizarDoacao(
+        doacaoAtualizada
+      );
+
+      if (atualizada) {
+        setMensagem(
+          'Doação atualizada com sucesso!'
+        );
+
+        setTimeout(() => {
+          voltar(doacaoAtualizada);
+        }, 500);
+      } else {
+        setMensagem(
+          'Não foi possível atualizar a doação.'
+        );
+      }
+
+      return;
+    }
+
+    const doacaoSalva = await salvarDoacao(
+      dadosDoacao
+    );
+
+    if (doacaoSalva) {
       setMensagem(
         'Doação cadastrada e salva com sucesso!'
       );
+
+      setTipoItem('');
+      setQuantidade('');
+      setPontoDestino('');
+      setErroQuantidade('');
     } else {
       setMensagem(
         'Não foi possível salvar a doação.'
@@ -82,7 +132,7 @@ export default function CadastroDoacao({
     }
   }
 
-  function voltarParaLista() {
+  function cancelar() {
     setMensagem('');
     setErroQuantidade('');
     voltar();
@@ -91,24 +141,32 @@ export default function CadastroDoacao({
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
+      }
     >
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.detalheContainer}
+        contentContainerStyle={
+          styles.detalheContainer
+        }
         keyboardShouldPersistTaps="handled"
       >
         <TouchableOpacity
           style={styles.botaoVoltar}
-          onPress={voltarParaLista}
+          onPress={cancelar}
         >
           <Text style={styles.textoVoltar}>
-            ← Voltar
+            ← Cancelar
           </Text>
         </TouchableOpacity>
 
         <Text style={styles.nomeDetalhe}>
-          Cadastrar doação
+          {modoEdicao
+            ? 'Editar doação'
+            : 'Cadastrar doação'}
         </Text>
 
         <Text style={styles.label}>
@@ -162,10 +220,12 @@ export default function CadastroDoacao({
 
         <TouchableOpacity
           style={styles.botaoCadastrar}
-          onPress={cadastrarDoacao}
+          onPress={salvar}
         >
           <Text style={styles.textoBotao}>
-            Cadastrar doação
+            {modoEdicao
+              ? 'Salvar alterações'
+              : 'Cadastrar doação'}
           </Text>
         </TouchableOpacity>
 

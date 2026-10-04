@@ -45,6 +45,35 @@ export async function salvarDoacao(doacao) {
   }
 }
 
+export async function atualizarDoacao(doacao) {
+  try {
+    const doacoes = await listarDoacoes();
+
+    const novasDoacoes = doacoes.map((item) => {
+      if (item.id === doacao.id) {
+        return {
+          ...item,
+          tipoItem: doacao.tipoItem,
+          quantidade: doacao.quantidade,
+          pontoDestino: doacao.pontoDestino,
+        };
+      }
+
+      return item;
+    });
+
+    await AsyncStorage.setItem(
+      CHAVE_DOACOES,
+      JSON.stringify(novasDoacoes)
+    );
+
+    return true;
+  } catch (erro) {
+    console.log('Erro ao atualizar doacao:', erro);
+    return false;
+  }
+}
+
 export async function excluirDoacao(id) {
   try {
     const doacoes = await listarDoacoes();
