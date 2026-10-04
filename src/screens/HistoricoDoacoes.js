@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 
 import {
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,6 +22,7 @@ export default function HistoricoDoacoes({
   abrirDetalheDoacao,
 }) {
   const [doacoes, setDoacoes] = useState([]);
+  const [textoBusca, setTextoBusca] = useState('');
 
   useEffect(() => {
     async function carregarHistorico() {
@@ -30,9 +34,22 @@ export default function HistoricoDoacoes({
     carregarHistorico();
   }, []);
 
+  const doacoesFiltradas = doacoes.filter((doacao) =>
+    doacao.tipoItem
+      .toLowerCase()
+      .includes(textoBusca.toLowerCase())
+  );
+
   if (doacoes.length === 0) {
     return (
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : 'height'
+        }
+      >
         <View style={styles.detalheContainer}>
           <TouchableOpacity
             style={styles.botaoVoltar}
@@ -66,16 +83,22 @@ export default function HistoricoDoacoes({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
+      }
+    >
       <FlatList
-        data={doacoes}
+        data={doacoesFiltradas}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
         renderItem={({ item }) => (
           <TouchableOpacity
             activeOpacity={0.7}
@@ -84,6 +107,8 @@ export default function HistoricoDoacoes({
             <ItemDoacao doacao={item} />
           </TouchableOpacity>
         )}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View>
             <TouchableOpacity
@@ -99,12 +124,32 @@ export default function HistoricoDoacoes({
               Minhas doações
             </Text>
 
+            <TextInput
+              style={styles.input}
+              placeholder="Buscar por tipo de item"
+              placeholderTextColor="#888"
+              value={textoBusca}
+              onChangeText={setTextoBusca}
+              autoCapitalize="none"
+            />
+
             <Text style={styles.resultados}>
-              {doacoes.length} doação(ões) registrada(s)
+              {doacoesFiltradas.length} doação(ões) encontrada(s)
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.semResultados}>
+            <Text style={styles.semResultadosTexto}>
+              Nenhuma doação encontrada.
+            </Text>
+
+            <Text style={styles.semResultadosSubtexto}>
+              Nenhuma doação contém "{textoBusca}" no tipo do item.
             </Text>
           </View>
         }
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
