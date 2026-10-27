@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Arquivos gerados pelo Java e Maven
+api/target/
+
+# Logs de falha da JVM
+hs_err_pid*.log
+replay_pid*.log
