@@ -3,7 +3,7 @@ import type { Doacao } from './doacao';
 
 export type RootStackParamList = {
   ListaPontos: undefined;
-  DetalhePonto: { id: number };
+  DetalhePonto: { produtoId: string; id?: number | string };
   CadastroDoacao: { doacaoParaEditar?: Doacao } | undefined;
   HistoricoDoacoes: undefined;
   DetalheDoacao: { doacao: Doacao };

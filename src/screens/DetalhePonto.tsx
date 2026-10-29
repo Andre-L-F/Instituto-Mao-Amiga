@@ -11,43 +11,51 @@ import {
 
 import type { DetalhePontoScreenProps } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
-import { buscarPontoPorId } from '../services/pontosService';
+import { buscarProdutoPorId } from '../services/pontosService';
 import styles from '../styles/styles';
 
 export default function DetalhePonto({
   route,
   navigation,
-}: DetalhePontoProps) {
-  const { id } = route.params;
+}: DetalhePontoScreenProps) {
+  // Usa o produtoId recebido na navegação
+  const produtoId = String(route.params.produtoId ?? route.params.id ?? '');
 
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [naoEncontrado, setNaoEncontrado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const carregarPonto = useCallback(async () => {
+  // Busca o produto em /produtos/{id} usando o produtoId recebido na navegação
+  const carregarProduto = useCallback(async () => {
+    if (!produtoId) {
+      setNaoEncontrado(true);
+      setCarregando(false);
+      return;
+    }
+
     setCarregando(true);
     setNaoEncontrado(false);
     setErro(null);
 
     try {
-      const pontoBuscado = await buscarPontoPorId(id);
-      if (pontoBuscado) {
-        setPonto(pontoBuscado);
+      const produtoBuscado = await buscarProdutoPorId(produtoId);
+      if (produtoBuscado) {
+        setPonto(produtoBuscado);
       } else {
         setNaoEncontrado(true);
       }
     } catch (err) {
-      console.log('Erro ao buscar ponto por id:', err);
-      setErro('Não foi possível carregar as informações deste ponto da API.');
+      console.log('Erro ao buscar produto por id na API:', err);
+      setErro('Não foi possível carregar as informações deste item da API.');
     } finally {
       setCarregando(false);
     }
-  }, [id]);
+  }, [produtoId]);
 
   useEffect(() => {
-    carregarPonto();
-  }, [carregarPonto]);
+    carregarProduto();
+  }, [carregarProduto]);
 
   return (
     <KeyboardAvoidingView
@@ -70,7 +78,7 @@ export default function DetalhePonto({
             <View style={styles.carregandoContainer}>
               <ActivityIndicator size="large" color="#2E7D32" />
               <Text style={styles.carregandoTexto}>
-                Carregando detalhes do ponto...
+                Carregando detalhes da API...
               </Text>
             </View>
           )}
@@ -78,10 +86,10 @@ export default function DetalhePonto({
           {!carregando && naoEncontrado && (
             <View style={styles.semResultados}>
               <Text style={styles.semResultadosTexto}>
-                Ponto não encontrado
+                Item não encontrado
               </Text>
               <Text style={styles.semResultadosSubtexto}>
-                O ponto com identificador {id} não foi encontrado no sistema (HTTP 404).
+                O item com identificador {produtoId} não foi encontrado no servidor (HTTP 404).
               </Text>
             </View>
           )}
@@ -92,7 +100,7 @@ export default function DetalhePonto({
               <Text style={styles.erroMensagem}>{erro}</Text>
               <TouchableOpacity
                 style={styles.botaoTentarNovamente}
-                onPress={carregarPonto}
+                onPress={carregarProduto}
               >
                 <Text style={styles.textoBotaoTentarNovamente}>
                   Tentar novamente
@@ -105,19 +113,35 @@ export default function DetalhePonto({
             <View>
               <Text style={styles.nomeDetalhe}>{ponto.nome}</Text>
 
-              <Text style={styles.label}>Endereço</Text>
-              <Text style={styles.texto}>📍 {ponto.endereco}</Text>
+              {ponto.endereco ? (
+                <>
+                  <Text style={styles.label}>Endereço</Text>
+                  <Text style={styles.texto}>📍 {ponto.endereco}</Text>
+                </>
+              ) : null}
 
-              <Text style={styles.label}>Dias e horários</Text>
-              <Text style={styles.texto}>🕐 {ponto.horario}</Text>
+              {ponto.horario ? (
+                <>
+                  <Text style={styles.label}>Dias e horários</Text>
+                  <Text style={styles.texto}>🕐 {ponto.horario}</Text>
+                </>
+              ) : null}
 
-              <Text style={styles.label}>O que recebe/distribui</Text>
-              <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
+              {ponto.recebeDistribui ? (
+                <>
+                  <Text style={styles.label}>O que recebe/distribui</Text>
+                  <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
+                </>
+              ) : null}
 
-              <Text style={styles.label}>Coordenadas geográficas</Text>
-              <Text style={styles.texto}>
-                🌐 Lat: {ponto.latitude.toFixed(4)}, Long: {ponto.longitude.toFixed(4)}
-              </Text>
+              {ponto.latitude !== undefined && ponto.longitude !== undefined ? (
+                <>
+                  <Text style={styles.label}>Coordenadas geográficas</Text>
+                  <Text style={styles.texto}>
+                    🌐 Lat: {ponto.latitude.toFixed(4)}, Long: {ponto.longitude.toFixed(4)}
+                  </Text>
+                </>
+              ) : null}
             </View>
           )}
         </View>
@@ -125,5 +149,3 @@ export default function DetalhePonto({
     </KeyboardAvoidingView>
   );
 }
-
-type DetalhePontoProps = DetalhePontoScreenProps;

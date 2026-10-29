@@ -1,7 +1,8 @@
-import { apiFetch, ApiError } from './api';
-import type { PageResponse, Ponto } from '../types/ponto';
 
-export interface ListarPontosParams {
+import { apiFetch, ApiError } from './api';
+import type { Page, Ponto } from '../types/ponto';
+
+export interface ListarProdutosParams {
   page?: number;
   size?: number;
   sort?: string;
@@ -10,9 +11,15 @@ export interface ListarPontosParams {
   tipo?: string;
 }
 
-export async function listarPontos(
-  params: ListarPontosParams = {}
-): Promise<PageResponse<Ponto>> {
+export type ListarPontosParams = ListarProdutosParams;
+
+/**
+ * Busca produtos na API paginada através de /produtos/filtro.
+ * Funciona com ou sem parâmetros de busca e o backend ignora maiúsculas e minúsculas.
+ */
+export async function listarProdutos(
+  params: ListarProdutosParams = {}
+): Promise<Page<Ponto>> {
   const queryParams = new URLSearchParams();
 
   if (params.page !== undefined) {
@@ -24,29 +31,43 @@ export async function listarPontos(
   if (params.sort) {
     queryParams.append('sort', params.sort);
   }
-  if (params.busca) {
-    queryParams.append('busca', params.busca);
+  if (params.busca && params.busca.trim()) {
+    queryParams.append('busca', params.busca.trim());
+    queryParams.append('nome', params.busca.trim());
   }
-  if (params.bairro) {
-    queryParams.append('bairro', params.bairro);
+  if (params.bairro && params.bairro.trim()) {
+    queryParams.append('bairro', params.bairro.trim());
   }
-  if (params.tipo) {
-    queryParams.append('tipo', params.tipo);
+  if (params.tipo && params.tipo.trim()) {
+    queryParams.append('tipo', params.tipo.trim());
   }
 
   const queryString = queryParams.toString();
-  const endpoint = queryString ? `/pontos?${queryString}` : '/pontos';
+  const endpoint = queryString ? `/produtos/filtro?${queryString}` : '/produtos/filtro';
 
-  return apiFetch<PageResponse<Ponto>>(endpoint);
+  return apiFetch<Page<Ponto>>(endpoint);
 }
 
-export async function buscarPontoPorId(id: number): Promise<Ponto | null> {
+export const listarPontos = listarProdutos;
+
+/**
+ * Busca o produto em /produtos/{id} usando o produtoId recebido na navegação.
+ */
+export async function buscarProdutoPorId(
+  produtoId: string
+): Promise<Ponto | null> {
   try {
-    return await apiFetch<Ponto>(`/pontos/${id}`);
+    return await apiFetch<Ponto>(`/produtos/${produtoId}`);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       return null;
     }
     throw error;
   }
+}
+
+export async function buscarPontoPorId(
+  id: string | number
+): Promise<Ponto | null> {
+  return buscarProdutoPorId(String(id));
 }

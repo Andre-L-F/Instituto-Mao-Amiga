@@ -4,6 +4,7 @@ import com.instituto.maoamiga.api.model.Ponto;
 
 public record PontoDTO(
     Long id,
+    String produtoId,
     String nome,
     String endereco,
     String horario,
@@ -17,6 +18,7 @@ public record PontoDTO(
         }
         return new PontoDTO(
             ponto.getId(),
+            String.valueOf(ponto.getId()),
             ponto.getNome(),
             ponto.getEndereco(),
             ponto.getHorario(),

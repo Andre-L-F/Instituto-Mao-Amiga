@@ -27,10 +27,12 @@ public class PontoService {
         Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize, pageable.getSort());
 
         Page<Ponto> pagina;
-        if ((busca != null && !busca.isBlank()) ||
-            (bairro != null && !bairro.isBlank()) ||
-            (tipo != null && !tipo.isBlank())) {
-            pagina = pontoRepository.findByFiltros(busca, bairro, tipo, safePageable);
+        String buscaLimpa = (busca != null && !busca.isBlank()) ? busca.trim() : null;
+        String bairroLimpo = (bairro != null && !bairro.isBlank()) ? bairro.trim() : null;
+        String tipoLimpo = (tipo != null && !tipo.isBlank()) ? tipo.trim() : null;
+
+        if (buscaLimpa != null || bairroLimpo != null || tipoLimpo != null) {
+            pagina = pontoRepository.findByFiltros(buscaLimpa, bairroLimpo, tipoLimpo, safePageable);
         } else {
             pagina = pontoRepository.findAll(safePageable);
         }
@@ -41,5 +43,14 @@ public class PontoService {
     @Transactional(readOnly = true)
     public Optional<PontoDTO> buscarPorId(Long id) {
         return pontoRepository.findById(id).map(PontoDTO::fromEntity);
+    }
+
+    @Transactional
+    public boolean deletar(Long id) {
+        if (pontoRepository.existsById(id)) {
+            pontoRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }
