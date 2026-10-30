@@ -1,5 +1,10 @@
-export interface Ponto {
-  id: number;
+import type { Page, PageInfo, Produto } from './produto';
+
+export type { Page, PageInfo, Produto };
+
+export interface Ponto extends Produto {
+  produtoId: string;
+  id?: number | string;
   nome: string;
   endereco: string;
   horario: string;
@@ -8,18 +13,4 @@ export interface Ponto {
   longitude: number;
 }
 
-export interface PageInfo {
-  size: number;
-  number: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  page?: PageInfo;
-  totalElements?: number;
-  totalPages?: number;
-  size?: number;
-  number?: number;
-}
+export type PageResponse<T> = Page<T>;

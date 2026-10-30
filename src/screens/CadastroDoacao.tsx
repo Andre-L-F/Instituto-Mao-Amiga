@@ -210,7 +210,7 @@ export default function CadastroDoacao({
               const selecionado = pontoDestino === ponto.nome;
               return (
                 <TouchableOpacity
-                  key={ponto.id}
+                  key={ponto.produtoId || String(ponto.id)}
                   style={[
                     styles.pontoChip,
                     selecionado && styles.pontoChipSelecionado,
