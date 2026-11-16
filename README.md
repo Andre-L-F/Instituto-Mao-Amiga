@@ -59,6 +59,85 @@ instituto-mao-amiga/
 
 ## ☕ API Spring Boot (`api/`)
 
+A API foi desenvolvida em Java com **Spring Boot 3**, **Spring Web**, **Spring Data JPA**, **Bean Validation**, **Lombok**, **SpringDoc OpenAPI (Swagger)** e banco de dados **H2 em arquivo** (`jdbc:h2:file:./data/institutomaoamiga`).
+
+### Swagger / OpenAPI UI
+- **URL do Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **OpenAPI JSON:** `http://localhost:8080/api-docs`
+- **H2 Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:file:./data/institutomaoamiga`)
+
+### Endpoints da API (`/api/v1/pontos`)
+
+| Método | Endpoint | Descrição | Status Sucesso | Status Erros |
+|---|---|---|---|---|
+| `GET` | `/api/v1/pontos` | Lista todos os pontos de coleta e distribuição | `200 OK` | `500` |
+| `GET` | `/api/v1/pontos/{id}` | Busca ponto por UUID | `200 OK` | `404 Not Found` |
+| `POST` | `/api/v1/pontos` | Cadastra novo ponto com validação | `201 Created` | `400 Bad Request` |
+| `PUT` | `/api/v1/pontos/{id}` | Atualiza ponto por UUID | `200 OK` | `400 Bad Request`, `404 Not Found` |
+| `DELETE` | `/api/v1/pontos/{id}` | Remove ponto por UUID | `204 No Content` | `404 Not Found` |
+
+#### Exemplos de Requisições e Respostas:
+
+**1. POST `/api/v1/pontos` (Criar ponto válido):**
+```json
+// Request Body
+{
+  "nome": "Ponto Setor Sul",
+  "endereco": "Rua 84, 500",
+  "bairro": "Setor Sul",
+  "horario": "Seg a Sex, 8h às 17h",
+  "tipo": "coleta"
+}
+
+// Resposta 201 Created:
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "nome": "Ponto Setor Sul",
+  "endereco": "Rua 84, 500",
+  "bairro": "Setor Sul",
+  "horario": "Seg a Sex, 8h às 17h",
+  "tipo": "coleta"
+}
+```
+
+**2. POST `/api/v1/pontos` (400 Bad Request - Campo obrigatório vazio):**
+```json
+// Request Body com campos vazios:
+{
+  "nome": "",
+  "endereco": "",
+  "bairro": "",
+  "horario": "",
+  "tipo": ""
+}
+
+// Resposta 400 Bad Request:
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Erro de validação dos campos obrigatórios",
+  "campos": {
+    "nome": "O campo nome é obrigatório e não pode ser vazio.",
+    "endereco": "O campo endereço é obrigatório e não pode ser vazio.",
+    "bairro": "O campo bairro é obrigatório e não pode ser vazio.",
+    "horario": "O campo horário é obrigatório e não pode ser vazio.",
+    "tipo": "O campo tipo é obrigatório e não pode ser vazio."
+  }
+}
+```
+
+**3. GET `/api/v1/pontos/{id}` (404 Not Found - ID inexistente):**
+```text
+GET /api/v1/pontos/00000000-0000-0000-0000-000000000000
+
+// Resposta 404 Not Found:
+{
+  "status": 404,
+  "error": "404 NOT_FOUND",
+  "message": "Ponto não encontrado com o id: 00000000-0000-0000-0000-000000000000"
+}
+```
+
 A API foi desenvolvida em Java com **Spring Boot 3**, **Spring Web**, **Spring Data JPA** e banco de dados **H2**:
 
 ### Endpoints

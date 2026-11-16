@@ -1,22 +1,31 @@
 package com.instituto.maoamiga.api.controller;
 
-import com.instituto.maoamiga.api.dto.PontoDTO;
+import com.instituto.maoamiga.api.dto.PontoRequestDTO;
+import com.instituto.maoamiga.api.dto.PontoResponseDTO;
 import com.instituto.maoamiga.api.service.PontoService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping({"/produtos", "/pontos"})
+@RequestMapping("/api/v1/pontos")
+@CrossOrigin(origins = "*")
+@Tag(name = "Pontos de Coleta", description = "Endpoints para gerenciamento dos pontos de coleta e distribuição")
 public class PontoController {
 
     private final PontoService pontoService;
@@ -26,75 +35,39 @@ public class PontoController {
     }
 
     @GetMapping
-    public Page<PontoDTO> listar(
-        @PageableDefault(size = 20) Pageable pageable,
-        @RequestParam(required = false) String busca,
-        @RequestParam(required = false) String nome,
-        @RequestParam(required = false) String filtro,
-        @RequestParam(required = false) String termo,
-        @RequestParam(required = false) String q,
-        @RequestParam(required = false) String bairro,
-        @RequestParam(required = false) String tipo
-    ) {
-        String termoBusca = resolverTermoBusca(busca, nome, filtro, termo, q);
-        return pontoService.listar(pageable, termoBusca, bairro, tipo);
-    }
-
-    @GetMapping("/filtro")
-    public Page<PontoDTO> filtrar(
-        @PageableDefault(size = 20) Pageable pageable,
-        @RequestParam(required = false) String busca,
-        @RequestParam(required = false) String nome,
-        @RequestParam(required = false) String filtro,
-        @RequestParam(required = false) String termo,
-        @RequestParam(required = false) String q,
-        @RequestParam(required = false) String bairro,
-        @RequestParam(required = false) String tipo
-    ) {
-        String termoBusca = resolverTermoBusca(busca, nome, filtro, termo, q);
-        return pontoService.listar(pageable, termoBusca, bairro, tipo);
+    @Operation(summary = "Lista todos os pontos de coleta")
+    public List<PontoResponseDTO> listarTodos() {
+        return pontoService.listarTodos();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PontoDTO> buscarPorId(@PathVariable("id") Long id) {
-        PontoDTO ponto = pontoService.buscarPorId(id)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Ponto com id " + id + " não encontrado."
-            ));
+    @Operation(summary = "Busca um ponto de coleta pelo ID (UUID)")
+    public ResponseEntity<PontoResponseDTO> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(pontoService.buscarPorId(id));
+    }
 
-        return ResponseEntity.ok(ponto);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Cadastra um novo ponto de coleta")
+    public ResponseEntity<PontoResponseDTO> cadastrar(@Valid @RequestBody PontoRequestDTO dto) {
+        PontoResponseDTO cadastrado = pontoService.cadastrar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cadastrado);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualiza um ponto de coleta existente pelo ID (UUID)")
+    public ResponseEntity<PontoResponseDTO> atualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody PontoRequestDTO dto
+    ) {
+        return ResponseEntity.ok(pontoService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable("id") Long id) {
-        boolean deletado = pontoService.deletar(id);
-        if (!deletado) {
-            throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Ponto com id " + id + " não encontrado."
-            );
-        }
-
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Exclui um ponto de coleta pelo ID (UUID)")
+    public ResponseEntity<Void> excluir(@PathVariable UUID id) {
+        pontoService.excluir(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private String resolverTermoBusca(String busca, String nome, String filtro, String termo, String q) {
-        if (busca != null && !busca.isBlank()) {
-            return busca;
-        }
-        if (nome != null && !nome.isBlank()) {
-            return nome;
-        }
-        if (filtro != null && !filtro.isBlank()) {
-            return filtro;
-        }
-        if (termo != null && !termo.isBlank()) {
-            return termo;
-        }
-        if (q != null && !q.isBlank()) {
-            return q;
-        }
-        return null;
     }
 }
