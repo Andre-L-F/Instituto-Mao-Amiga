@@ -1,19 +1,24 @@
 package com.instituto.maoamiga.api.config;
 
+import com.instituto.maoamiga.api.entity.Doacao;
 import com.instituto.maoamiga.api.entity.Ponto;
+import com.instituto.maoamiga.api.repository.DoacaoRepository;
 import com.instituto.maoamiga.api.repository.PontoRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
     private final PontoRepository pontoRepository;
+    private final DoacaoRepository doacaoRepository;
 
-    public DataInitializer(PontoRepository pontoRepository) {
+    public DataInitializer(PontoRepository pontoRepository, DoacaoRepository doacaoRepository) {
         this.pontoRepository = pontoRepository;
+        this.doacaoRepository = doacaoRepository;
     }
 
     @Override
@@ -49,7 +54,39 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             pontoRepository.saveAll(pontos);
-            System.out.println(">>> [N2-2] Carga inicial de " + pontos.size() + " pontos em Goiânia realizada com sucesso!");
+            System.out.println(">>> Carga inicial de " + pontos.size() + " pontos realizada com sucesso!");
+        }
+
+        if (doacaoRepository.count() == 0) {
+            List<Doacao> doacoesIniciais = List.of(
+                Doacao.builder()
+                    .tipoItem("Alimentos não perecíveis")
+                    .quantidade(25)
+                    .pontoDestino("Ponto Central")
+                    .criadoEm(LocalDateTime.now().minusDays(3))
+                    .build(),
+                Doacao.builder()
+                    .tipoItem("Agasalhos e Cobertores")
+                    .quantidade(10)
+                    .pontoDestino("Ponto Setor Bueno")
+                    .criadoEm(LocalDateTime.now().minusDays(2))
+                    .build(),
+                Doacao.builder()
+                    .tipoItem("Kits de Higiene")
+                    .quantidade(15)
+                    .pontoDestino("Ponto Vila Esperança")
+                    .criadoEm(LocalDateTime.now().minusDays(1))
+                    .build(),
+                Doacao.builder()
+                    .tipoItem("Leite em pó e Fraldas")
+                    .quantidade(30)
+                    .pontoDestino("Ponto Jardim Goiás")
+                    .criadoEm(LocalDateTime.now().minusHours(5))
+                    .build()
+            );
+
+            doacaoRepository.saveAll(doacoesIniciais);
+            System.out.println(">>> [N2-5] Carga inicial de " + doacoesIniciais.size() + " doações realizada com sucesso!");
         }
     }
 

@@ -76,6 +76,66 @@ A API foi desenvolvida em Java com **Spring Boot 3**, **Spring Web**, **Spring D
 | `POST` | `/api/v1/pontos` | Cadastra novo ponto com validação | `201 Created` | `400 Bad Request` |
 | `PUT` | `/api/v1/pontos/{id}` | Atualiza ponto por UUID | `200 OK` | `400 Bad Request`, `404 Not Found` |
 | `DELETE` | `/api/v1/pontos/{id}` | Remove ponto por UUID | `204 No Content` | `404 Not Found` |
+| `GET` | `/api/v1/doacoes/filtro` | Busca doações paginadas com filtro por `tipoItem`, ordenadas por data decrescente | `200 OK` | `500` |
+| `GET` | `/api/v1/doacoes/{id}` | Busca doação por UUID | `200 OK` | `404 Not Found` |
+| `POST` | `/api/v1/doacoes` | Cadastra nova doação (data gerada pelo servidor) | `201 Created` | `400 Bad Request` |
+| `PUT` | `/api/v1/doacoes/{id}` | Atualiza doação por UUID (mantém data original) | `200 OK` | `400 Bad Request`, `404 Not Found` |
+| `DELETE` | `/api/v1/doacoes/{id}` | Remove doação por UUID | `204 No Content` | `404 Not Found` |
+
+### 📦 [N2-5] Exemplos de Requisição e Resposta de Doações
+
+#### 1. POST `/api/v1/doacoes` (Cadastrar doação válida):
+```json
+// Request Body
+{
+  "tipoItem": "Cestas Básicas",
+  "quantidade": 12,
+  "pontoDestino": "Ponto Central"
+}
+
+// Resposta 201 Created:
+{
+  "id": "7f8b9e61-4a12-4cf0-93cb-3392efb11234",
+  "tipoItem": "Cestas Básicas",
+  "quantidade": 12,
+  "pontoDestino": "Ponto Central",
+  "criadoEm": "2026-11-16T17:00:00"
+}
+```
+
+#### 2. POST `/api/v1/doacoes` (400 Bad Request - Quantidade zero ou tipo vazio):
+```json
+// Request Body inválido
+{
+  "tipoItem": "",
+  "quantidade": 0,
+  "pontoDestino": ""
+}
+
+// Resposta 400 Bad Request:
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Erro de validação dos campos obrigatórios",
+  "campos": {
+    "tipoItem": "O tipo do item é obrigatório e não pode ser vazio.",
+    "quantidade": "A quantidade deve ser maior que zero.",
+    "pontoDestino": "O ponto de destino é obrigatório e não pode ser vazio."
+  }
+}
+```
+
+#### 3. GET `/api/v1/doacoes/{id}` (404 Not Found - Doação inexistente):
+```text
+GET /api/v1/doacoes/00000000-0000-0000-0000-000000000000
+
+// Resposta 404 Not Found:
+{
+  "status": 404,
+  "error": "404 NOT_FOUND",
+  "message": "Doação não encontrada com o id: 00000000-0000-0000-0000-000000000000"
+}
+```
 
 ### 🔍 [N2-2] Exemplos de Busca Paginada (`/api/v1/pontos/filtro`)
 
