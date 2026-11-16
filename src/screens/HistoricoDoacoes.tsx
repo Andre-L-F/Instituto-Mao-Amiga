@@ -130,7 +130,7 @@ export default function HistoricoDoacoes({
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() =>
-        navigation.navigate('DetalheDoacao', { id: item.id, doacao: item })
+        navigation.navigate('DetalheDoacao', { id: item.id })
       }
     >
       <ItemDoacao doacao={item} />
