@@ -8,7 +8,7 @@ export type RootStackParamList = {
   CadastroPonto: { pontoParaEditar?: Ponto } | undefined;
   CadastroDoacao: { doacaoParaEditar?: Doacao } | undefined;
   HistoricoDoacoes: undefined;
-  DetalheDoacao: { doacao: Doacao };
+  DetalheDoacao: { id: string; doacao?: Doacao };
 };
 
 export type ListaPontosScreenProps = NativeStackScreenProps<

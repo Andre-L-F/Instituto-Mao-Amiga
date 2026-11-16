@@ -4,49 +4,37 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
 import type { DetalheDoacaoScreenProps } from '../types/navigation';
-import { excluirDoacao } from '../services/doacoesStorage';
 import styles from '../styles/styles';
 
 export default function DetalheDoacao({
   route,
   navigation,
 }: DetalheDoacaoScreenProps) {
-  const { doacao } = route.params;
+  const doacao = route.params?.doacao;
+
+  if (!doacao) {
+    return (
+      <View style={[styles.container, styles.detalheContainer]}>
+        <TouchableOpacity
+          style={styles.botaoVoltar}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.textoVoltar}>← Voltar</Text>
+        </TouchableOpacity>
+        <Text style={styles.nomeDetalhe}>Doação não encontrada</Text>
+      </View>
+    );
+  }
 
   const data = new Date(doacao.criadoEm);
   const dataFormatada = data.toLocaleString('pt-BR', {
     dateStyle: 'full',
     timeStyle: 'short',
   });
-
-  function confirmarExclusao() {
-    Alert.alert(
-      'Excluir doação',
-      'Tem certeza que deseja excluir esta doação?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            const excluida = await excluirDoacao(doacao.id);
-
-            if (excluida) {
-              navigation.goBack();
-            } else {
-              Alert.alert('Erro', 'Não foi possível excluir a doação.');
-            }
-          },
-        },
-      ]
-    );
-  }
 
   return (
     <ScrollView
@@ -81,13 +69,6 @@ export default function DetalheDoacao({
         }
       >
         <Text style={styles.textoBotao}>Editar doação</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.botaoExcluir}
-        onPress={confirmarExclusao}
-      >
-        <Text style={styles.textoBotao}>Excluir doação</Text>
       </TouchableOpacity>
     </ScrollView>
   );
