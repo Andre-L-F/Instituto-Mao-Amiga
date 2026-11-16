@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 
 import type { CadastroDoacaoScreenProps } from '../types/navigation';
-import type { Doacao } from '../types/doacao';
 import type { Ponto } from '../types/ponto';
-import { salvarDoacao, atualizarDoacao } from '../services/doacoesStorage';
-import { listarPontos } from '../services/pontosService';
+import { cadastrar, editar, ApiError } from '../services/doacoesService';
+import { listar as listarPontos } from '../services/pontosService';
 import styles from '../styles/styles';
 
 export default function CadastroDoacao({
@@ -30,18 +29,22 @@ export default function CadastroDoacao({
 
   const [pontosDisponiveis, setPontosDisponiveis] = useState<Ponto[]>([]);
   const [carregandoPontos, setCarregandoPontos] = useState(true);
+  const [erroPontos, setErroPontos] = useState<string | null>(null);
 
   const [erroQuantidade, setErroQuantidade] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     async function carregarPontosDaApi() {
       try {
         setCarregandoPontos(true);
-        const resposta = await listarPontos({ size: 50 });
-        setPontosDisponiveis(resposta.content || []);
+        setErroPontos(null);
+        const resposta = await listarPontos();
+        setPontosDisponiveis(resposta || []);
       } catch (err) {
         console.log('Erro ao carregar pontos para escolha no cadastro:', err);
+        setErroPontos('Não foi possível carregar os pontos da API.');
       } finally {
         setCarregandoPontos(false);
       }
@@ -78,6 +81,7 @@ export default function CadastroDoacao({
   async function salvar() {
     setMensagem('');
 
+    // Validação no app antes de enviar
     if (!tipoItem.trim()) {
       setMensagem('Informe o tipo do item.');
       return;
@@ -99,49 +103,52 @@ export default function CadastroDoacao({
     }
 
     const quantidadeNumerica = Number(quantidade.trim());
-
-    if (modoEdicao && doacaoParaEditar) {
-      const doacaoAtualizada: Doacao = {
-        ...doacaoParaEditar,
-        tipoItem: tipoItem.trim(),
-        quantidade: quantidadeNumerica,
-        pontoDestino: pontoDestino.trim(),
-      };
-
-      const atualizada = await atualizarDoacao(doacaoAtualizada);
-
-      if (atualizada) {
-        setMensagem('Doação atualizada com sucesso!');
-        setTimeout(() => {
-          navigation.navigate('DetalheDoacao', { doacao: doacaoAtualizada });
-        }, 500);
-      } else {
-        setMensagem('Não foi possível atualizar a doação.');
-      }
-
-      return;
-    }
-
-    const dadosNovaDoacao = {
+    const payload = {
       tipoItem: tipoItem.trim(),
       quantidade: quantidadeNumerica,
       pontoDestino: pontoDestino.trim(),
     };
 
-    const doacaoSalva = await salvarDoacao(dadosNovaDoacao);
+    setSalvando(true);
 
-    if (doacaoSalva) {
-      setMensagem('Doação cadastrada e salva com sucesso!');
-      setTipoItem('');
-      setQuantidade('');
-      setPontoDestino('');
-      setErroQuantidade('');
+    try {
+      if (modoEdicao && doacaoParaEditar) {
+        const doacaoAtualizada = await editar(doacaoParaEditar.id, payload);
+        setMensagem('Doação atualizada com sucesso!');
+        setTimeout(() => {
+          navigation.navigate('DetalheDoacao', { id: doacaoAtualizada.id, doacao: doacaoAtualizada });
+        }, 500);
+      } else {
+        await cadastrar(payload);
+        setMensagem('Doação cadastrada com sucesso na API!');
+        setTipoItem('');
+        setQuantidade('');
+        setPontoDestino('');
+        setErroQuantidade('');
 
-      setTimeout(() => {
-        navigation.navigate('HistoricoDoacoes');
-      }, 700);
-    } else {
-      setMensagem('Não foi possível salvar a doação.');
+        setTimeout(() => {
+          navigation.navigate('HistoricoDoacoes');
+        }, 600);
+      }
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.status === 400 && err.data && typeof err.data === 'object' && 'campos' in err.data) {
+          const campos = (err.data as { campos?: Record<string, string> }).campos;
+          if (campos) {
+            const msgs = Object.values(campos).join('\n');
+            setMensagem(`Erro de validação na API:\n${msgs}`);
+          } else {
+            setMensagem(err.message || 'Erro ao validar dados na API.');
+          }
+        } else {
+          setMensagem(err.message || 'Não foi possível salvar a doação na API.');
+        }
+      } else {
+        setMensagem('Erro inesperado ao conectar com a API.');
+      }
+      // Mantém o que foi digitado!
+    } finally {
+      setSalvando(false);
     }
   }
 
@@ -179,6 +186,7 @@ export default function CadastroDoacao({
             setTipoItem(texto);
             setMensagem('');
           }}
+          editable={!salvando}
         />
 
         <Text style={styles.label}>Quantidade</Text>
@@ -189,6 +197,7 @@ export default function CadastroDoacao({
           value={quantidade}
           onChangeText={alterarQuantidade}
           keyboardType="numeric"
+          editable={!salvando}
         />
 
         {erroQuantidade !== '' && (
@@ -204,6 +213,8 @@ export default function CadastroDoacao({
               Carregando pontos da API...
             </Text>
           </View>
+        ) : erroPontos ? (
+          <Text style={[styles.erro, { marginVertical: 6 }]}>{erroPontos}</Text>
         ) : (
           <View style={styles.pontosOpcoesContainer}>
             {pontosDisponiveis.map((ponto) => {
@@ -219,6 +230,7 @@ export default function CadastroDoacao({
                     setPontoDestino(ponto.nome);
                     setMensagem('');
                   }}
+                  disabled={salvando}
                 >
                   <Text
                     style={[
@@ -236,19 +248,28 @@ export default function CadastroDoacao({
 
         <TextInput
           style={styles.input}
-          placeholder="Ou digite o nome do ponto..."
+          placeholder="Ou selecione um ponto acima..."
           placeholderTextColor="#888"
           value={pontoDestino}
           onChangeText={(texto: string) => {
             setPontoDestino(texto);
             setMensagem('');
           }}
+          editable={!salvando}
         />
 
-        <TouchableOpacity style={styles.botaoCadastrar} onPress={salvar}>
-          <Text style={styles.textoBotao}>
-            {modoEdicao ? 'Salvar alterações' : 'Cadastrar doação'}
-          </Text>
+        <TouchableOpacity
+          style={[styles.botaoCadastrar, salvando && { opacity: 0.6 }]}
+          onPress={salvar}
+          disabled={salvando}
+        >
+          {salvando ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.textoBotao}>
+              {modoEdicao ? 'Salvar alterações' : 'Cadastrar doação'}
+            </Text>
+          )}
         </TouchableOpacity>
 
         {mensagem !== '' && (
