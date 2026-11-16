@@ -100,6 +100,17 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
     inicializar();
   }, [carregarPrimeiraPagina]);
 
+  // Atualiza automaticamente a lista quando a tela ganha foco (ao voltar de cadastrar, editar ou excluir)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (buscaInicialCarregada.current) {
+        carregarPrimeiraPagina(busca);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, busca, carregarPrimeiraPagina]);
+
   // Busca com debounce a cada alteração no texto
   useEffect(() => {
     if (!buscaInicialCarregada.current) return;
@@ -134,6 +145,14 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
             <Text style={styles.subtitulo}>
               Pontos de coleta e distribuição
             </Text>
+
+            {/* Botão de cadastrar novo ponto na API */}
+            <TouchableOpacity
+              style={[styles.botaoCadastrar, { backgroundColor: '#1B5E20' }]}
+              onPress={() => navigation.navigate('CadastroPonto')}
+            >
+              <Text style={styles.textoBotao}>+ Cadastrar novo ponto</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.botaoCadastrar}

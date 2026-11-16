@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,7 +12,7 @@ import {
 
 import type { DetalhePontoScreenProps } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
-import { buscarPorId, ApiError } from '../services/pontosService';
+import { buscarPorId, excluir, ApiError } from '../services/pontosService';
 import styles from '../styles/styles';
 
 export default function DetalhePonto({
@@ -22,6 +23,7 @@ export default function DetalhePonto({
 
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
   const [naoEncontrado, setNaoEncontrado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -53,7 +55,48 @@ export default function DetalhePonto({
 
   useEffect(() => {
     carregarPonto();
-  }, [carregarPonto]);
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarPonto();
+    });
+
+    return unsubscribe;
+  }, [navigation, carregarPonto]);
+
+  const confirmarExclusao = () => {
+    if (!ponto) return;
+
+    Alert.alert(
+      'Excluir ponto',
+      `Tem certeza que deseja excluir o ponto "${ponto.nome}"?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setExcluindo(true);
+            try {
+              await excluir(ponto.id);
+              Alert.alert('Sucesso', 'Ponto excluído com sucesso!');
+              navigation.goBack();
+            } catch (err: unknown) {
+              console.log('Erro ao excluir ponto na API:', err);
+              Alert.alert(
+                'Erro',
+                'Não foi possível excluir o ponto na API. Verifique a conexão com o servidor.'
+              );
+            } finally {
+              setExcluindo(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -145,6 +188,27 @@ export default function DetalhePonto({
                   <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
                 </>
               ) : null}
+
+              <TouchableOpacity
+                style={[styles.botaoCadastrar, { marginTop: 30 }]}
+                onPress={() =>
+                  navigation.navigate('CadastroPonto', { pontoParaEditar: ponto })
+                }
+              >
+                <Text style={styles.textoBotao}>✏️ Editar ponto</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.botaoExcluir}
+                onPress={confirmarExclusao}
+                disabled={excluindo}
+              >
+                {excluindo ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.textoBotao}>🗑️ Excluir ponto</Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
         </View>
