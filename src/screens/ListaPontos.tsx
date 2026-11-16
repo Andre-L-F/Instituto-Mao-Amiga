@@ -12,83 +12,121 @@ import {
 
 import type { ListaPontosScreenProps } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
-import { listarProdutos } from '../services/pontosService';
+import { buscarPagina } from '../services/pontosService';
 import { carregarBusca, salvarBusca } from '../services/doacoesStorage';
 import styles from '../styles/styles';
+
+const ITENS_POR_PAGINA = 10;
 
 export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
   const [pontos, setPontos] = useState<Ponto[]>([]);
   const [busca, setBusca] = useState('');
-  const [carregando, setCarregando] = useState(true);
+  const [carregandoPrimeiraPagina, setCarregandoPrimeiraPagina] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalElementos, setTotalElementos] = useState(0);
+
   const buscaInicialCarregada = useRef(false);
 
-  // A tela de listagem busca os produtos na API paginada (/produtos/filtro) e mostra o que vem no content da resposta
-  const carregarDadosDaApi = useCallback(async (termoBusca?: string) => {
-    setCarregando(true);
+  // Busca a primeira página de dados pela API com filtro
+  const carregarPrimeiraPagina = useCallback(async (termoBusca: string) => {
+    setCarregandoPrimeiraPagina(true);
     setErro(null);
+    setPaginaAtual(0);
 
     try {
-      const termo = termoBusca !== undefined ? termoBusca : busca;
-      const resposta = await listarProdutos({
-        size: 50,
-        busca: termo,
+      const resposta = await buscarPagina({
+        filtro: termoBusca,
+        page: 0,
+        size: ITENS_POR_PAGINA,
       });
 
-      // Mostra o que vem no content da resposta (sem filtro local)
       setPontos(resposta.content || []);
+      setPaginaAtual(resposta.page?.number ?? 0);
+      setTotalPaginas(resposta.page?.totalPages ?? 1);
+      setTotalElementos(resposta.page?.totalElements ?? (resposta.content?.length || 0));
     } catch (err) {
-      console.log('Erro ao carregar dados da API:', err);
+      console.log('Erro ao carregar pontos da API:', err);
       setErro(
-        'Não foi possível conectar ao servidor da API. Verifique se o serviço Spring Boot está rodando em http://localhost:8080 (ou 10.0.2.2:8080 no Android) e tente novamente.'
+        'Não foi possível conectar ao servidor da API. Verifique se o backend Spring Boot está ativo em http://localhost:8080 (ou IP da rede local) e tente novamente.'
       );
     } finally {
-      setCarregando(false);
+      setCarregandoPrimeiraPagina(false);
     }
-  }, [busca]);
+  }, []);
 
-  // Inicializa com o histórico da busca e realiza o carregamento inicial da API
+  // Carrega mais itens (próxima página) com rolagem infinita
+  const carregarMaisItens = useCallback(async () => {
+    if (carregandoPrimeiraPagina || carregandoMais) return;
+    if (paginaAtual + 1 >= totalPaginas) return;
+
+    setCarregandoMais(true);
+
+    try {
+      const proximaPagina = paginaAtual + 1;
+      const resposta = await buscarPagina({
+        filtro: busca,
+        page: proximaPagina,
+        size: ITENS_POR_PAGINA,
+      });
+
+      setPontos((atuais) => [...atuais, ...(resposta.content || [])]);
+      setPaginaAtual(resposta.page?.number ?? proximaPagina);
+      setTotalPaginas(resposta.page?.totalPages ?? totalPaginas);
+    } catch (err) {
+      console.log('Erro ao carregar mais páginas da API:', err);
+    } finally {
+      setCarregandoMais(false);
+    }
+  }, [carregandoPrimeiraPagina, carregandoMais, paginaAtual, totalPaginas, busca]);
+
+  // Inicialização com busca salva
   useEffect(() => {
     async function inicializar() {
       const buscaSalva = await carregarBusca();
       if (buscaSalva) {
         setBusca(buscaSalva);
         buscaInicialCarregada.current = true;
-        carregarDadosDaApi(buscaSalva);
+        carregarPrimeiraPagina(buscaSalva);
       } else {
         buscaInicialCarregada.current = true;
-        carregarDadosDaApi('');
+        carregarPrimeiraPagina('');
       }
     }
 
     inicializar();
-  }, []);
+  }, [carregarPrimeiraPagina]);
 
-  // Busca direto na API ao digitar, com debounce (filtro local foi apagado)
+  // Busca com debounce a cada alteração no texto
   useEffect(() => {
     if (!buscaInicialCarregada.current) return;
 
     salvarBusca(busca);
 
     const timer = setTimeout(() => {
-      carregarDadosDaApi(busca);
+      carregarPrimeiraPagina(busca);
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [busca]);
+  }, [busca, carregarPrimeiraPagina]);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <FlatList
         style={styles.container}
         data={erro ? [] : pontos}
-        keyExtractor={(item: Ponto) => item.produtoId || String(item.id)}
+        keyExtractor={(item: Ponto) => String(item.id)}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        onEndReached={carregarMaisItens}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
             <Text style={styles.titulo}>Instituto Mão Amiga</Text>
@@ -101,7 +139,7 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
               style={styles.botaoCadastrar}
               onPress={() => navigation.navigate('CadastroDoacao')}
             >
-              <Text style={styles.textoBotao}>Cadastrar doação</Text>
+              <Text style={styles.textoBotao}>+ Cadastrar doação</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -113,28 +151,28 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
 
             <TextInput
               style={styles.input}
-              placeholder="Buscar na API..."
+              placeholder="Buscar ponto por nome ou bairro..."
               placeholderTextColor="#888"
               value={busca}
               onChangeText={(texto: string) => setBusca(texto)}
             />
 
-            {carregando && (
+            {carregandoPrimeiraPagina && (
               <View style={styles.carregandoContainer}>
                 <ActivityIndicator size="large" color="#2E7D32" />
                 <Text style={styles.carregandoTexto}>
-                  Buscando na API...
+                  Carregando pontos da API...
                 </Text>
               </View>
             )}
 
-            {erro !== null && (
+            {!carregandoPrimeiraPagina && erro && (
               <View style={styles.erroContainer}>
-                <Text style={styles.erroTitulo}>Erro de Conexão com a API</Text>
+                <Text style={styles.erroTitulo}>API Indisponível</Text>
                 <Text style={styles.erroMensagem}>{erro}</Text>
                 <TouchableOpacity
                   style={styles.botaoTentarNovamente}
-                  onPress={() => carregarDadosDaApi(busca)}
+                  onPress={() => carregarPrimeiraPagina(busca)}
                 >
                   <Text style={styles.textoBotaoTentarNovamente}>
                     Tentar novamente
@@ -143,9 +181,9 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
               </View>
             )}
 
-            {!carregando && !erro && (
+            {!carregandoPrimeiraPagina && !erro && (
               <Text style={styles.resultados}>
-                {pontos.length} item(ns) retornado(s) da API
+                {pontos.length} ponto(s) exibido(s) de {totalElementos} cadastrado(s)
               </Text>
             )}
           </View>
@@ -153,36 +191,45 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
         renderItem={({ item }: { item: Ponto }) => (
           <TouchableOpacity
             style={styles.item}
-            onPress={() =>
-              navigation.navigate('DetalhePonto', {
-                produtoId: item.produtoId || String(item.id),
-                id: item.produtoId || String(item.id),
-              })
-            }
+            onPress={() => navigation.navigate('DetalhePonto', { id: item.id })}
             activeOpacity={0.7}
           >
             <Text style={styles.nome}>{item.nome}</Text>
 
-            {item.endereco ? (
-              <Text style={styles.endereco}>📍 {item.endereco}</Text>
-            ) : null}
+            <Text style={styles.endereco}>
+              📍 {item.endereco}{item.bairro ? ` - ${item.bairro}` : ''}
+            </Text>
 
-            {item.horario ? (
-              <Text style={styles.horario}>🕐 {item.horario}</Text>
+            <Text style={styles.horario}>🕐 {item.horario}</Text>
+
+            {item.tipo ? (
+              <Text style={[styles.texto, { color: item.tipo.toLowerCase().includes('coleta') ? '#2E7D32' : '#E65100', fontWeight: '600', marginTop: 4 }]}>
+                🏷️ Tipo: {item.tipo}
+              </Text>
             ) : null}
 
             <Text style={styles.verDetalhes}>Toque para ver detalhes →</Text>
           </TouchableOpacity>
         )}
+        ListFooterComponent={
+          carregandoMais ? (
+            <View style={{ paddingVertical: 16 }}>
+              <ActivityIndicator size="small" color="#2E7D32" />
+              <Text style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 4 }}>
+                Carregando mais pontos...
+              </Text>
+            </View>
+          ) : undefined
+        }
         ListEmptyComponent={
-          !carregando && !erro ? (
+          !carregandoPrimeiraPagina && !erro ? (
             <View style={styles.semResultados}>
               <Text style={styles.semResultadosTexto}>
-                Nenhum item encontrado.
+                Nenhum ponto encontrado.
               </Text>
 
               <Text style={styles.semResultadosSubtexto}>
-                Tente pesquisar por outro termo na API.
+                Tente pesquisar por outro nome ou bairro na API.
               </Text>
             </View>
           ) : undefined
