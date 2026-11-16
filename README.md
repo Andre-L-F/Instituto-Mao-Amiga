@@ -71,10 +71,98 @@ A API foi desenvolvida em Java com **Spring Boot 3**, **Spring Web**, **Spring D
 | Método | Endpoint | Descrição | Status Sucesso | Status Erros |
 |---|---|---|---|---|
 | `GET` | `/api/v1/pontos` | Lista todos os pontos de coleta e distribuição | `200 OK` | `500` |
+| `GET` | `/api/v1/pontos/filtro` | Busca paginada com filtro por nome ou bairro (`filtro`, `page`, `size`, `sort`) | `200 OK` | `500` |
 | `GET` | `/api/v1/pontos/{id}` | Busca ponto por UUID | `200 OK` | `404 Not Found` |
 | `POST` | `/api/v1/pontos` | Cadastra novo ponto com validação | `201 Created` | `400 Bad Request` |
 | `PUT` | `/api/v1/pontos/{id}` | Atualiza ponto por UUID | `200 OK` | `400 Bad Request`, `404 Not Found` |
 | `DELETE` | `/api/v1/pontos/{id}` | Remove ponto por UUID | `204 No Content` | `404 Not Found` |
+
+### 🔍 [N2-2] Exemplos de Busca Paginada (`/api/v1/pontos/filtro`)
+
+#### 1. Sem filtro (Primeira página, 10 itens ordenados por nome):
+`GET /api/v1/pontos/filtro?page=0&size=10`
+```json
+{
+  "content": [
+    {
+      "id": "e4a77d85-a764-42b7-a36c-e5bc4189e3a1",
+      "nome": "Ponto Aeroporto",
+      "endereco": "Rua 17-A, 280",
+      "bairro": "Setor Aeroporto",
+      "horario": "Seg a Sex, 8h às 17h30",
+      "tipo": "coleta"
+    },
+    {
+      "id": "218faeb7-58ef-4171-aa56-78e9b6eaef23",
+      "nome": "Ponto Balneário Meia Ponte",
+      "endereco": "Avenida Nerópolis, 890",
+      "bairro": "Balneário Meia Ponte",
+      "horario": "Seg a Sex, 8h às 16h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 26,
+    "totalPages": 3
+  }
+}
+```
+
+#### 2. Filtrando por bairro (ex.: "Bueno"):
+`GET /api/v1/pontos/filtro?filtro=Bueno&page=0&size=10`
+```json
+{
+  "content": [
+    {
+      "id": "c13d7fbb-5e8b-4977-98ea-0ce8951e70e2",
+      "nome": "Ponto Setor Bueno",
+      "endereco": "Avenida T-63, 1290",
+      "bairro": "Setor Bueno",
+      "horario": "Seg a Sex, 9h às 18h",
+      "tipo": "coleta"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+#### 3. Pedindo a segunda página (`page=1`):
+`GET /api/v1/pontos/filtro?page=1&size=10`
+```json
+{
+  "content": [
+    {
+      "id": "84a7e841-a1b2-4d22-9214-411a763cfae2",
+      "nome": "Ponto Negrão de Lima",
+      "endereco": "Rua 208, 95",
+      "bairro": "Setor Negrão de Lima",
+      "horario": "Seg a Sex, 8h às 16h30",
+      "tipo": "distribuição"
+    },
+    {
+      "id": "78ffad01-b51c-4394-bb91-c276189efb12",
+      "nome": "Ponto Nova Suíça",
+      "endereco": "Avenida C-233, 150",
+      "bairro": "Setor Nova Suíça",
+      "horario": "Seg a Sex, 8h30 às 17h30",
+      "tipo": "coleta"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 1,
+    "totalElements": 26,
+    "totalPages": 3
+  }
+}
+```
 
 #### Exemplos de Requisições e Respostas:
 
