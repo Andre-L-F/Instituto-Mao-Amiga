@@ -1,73 +1,99 @@
-
-import { apiFetch, ApiError } from './api';
+import { get, post, put, del, ApiError } from './api';
 import type { Page, Ponto } from '../types/ponto';
 
-export interface ListarProdutosParams {
+export { ApiError };
+
+export interface PontoInput {
+  nome: string;
+  endereco: string;
+  bairro: string;
+  horario: string;
+  tipo: string;
+}
+
+export interface BuscarPaginaParams {
+  filtro?: string;
   page?: number;
   size?: number;
   sort?: string;
-  busca?: string;
-  bairro?: string;
-  tipo?: string;
 }
 
-export type ListarPontosParams = ListarProdutosParams;
+export type ListarProdutosParams = BuscarPaginaParams;
 
 /**
- * Busca produtos na API paginada através de /produtos/filtro.
- * Funciona com ou sem parâmetros de busca e o backend ignora maiúsculas e minúsculas.
+ * Lista todos os pontos sem paginação
+ * GET /api/v1/pontos
  */
-export async function listarProdutos(
-  params: ListarProdutosParams = {}
-): Promise<Page<Ponto>> {
-  const queryParams = new URLSearchParams();
+export async function listar(): Promise<Ponto[]> {
+  return get<Ponto[]>('/api/v1/pontos');
+}
 
+/**
+ * Busca página de pontos com filtro por nome ou bairro
+ * GET /api/v1/pontos/filtro?filtro=...&page=0&size=10
+ */
+export async function buscarPagina(params: BuscarPaginaParams = {}): Promise<Page<Ponto>> {
+  const query = new URLSearchParams();
+
+  if (params.filtro && params.filtro.trim()) {
+    query.append('filtro', params.filtro.trim());
+  }
   if (params.page !== undefined) {
-    queryParams.append('page', String(params.page));
+    query.append('page', String(params.page));
   }
   if (params.size !== undefined) {
-    queryParams.append('size', String(params.size));
+    query.append('size', String(params.size));
   }
   if (params.sort) {
-    queryParams.append('sort', params.sort);
-  }
-  if (params.busca && params.busca.trim()) {
-    queryParams.append('busca', params.busca.trim());
-    queryParams.append('nome', params.busca.trim());
-  }
-  if (params.bairro && params.bairro.trim()) {
-    queryParams.append('bairro', params.bairro.trim());
-  }
-  if (params.tipo && params.tipo.trim()) {
-    queryParams.append('tipo', params.tipo.trim());
+    query.append('sort', params.sort);
   }
 
-  const queryString = queryParams.toString();
-  const endpoint = queryString ? `/produtos/filtro?${queryString}` : '/produtos/filtro';
-
-  return apiFetch<Page<Ponto>>(endpoint);
+  const qs = query.toString();
+  const endpoint = qs ? `/api/v1/pontos/filtro?${qs}` : '/api/v1/pontos/filtro';
+  return get<Page<Ponto>>(endpoint);
 }
-
-export const listarPontos = listarProdutos;
 
 /**
- * Busca o produto em /produtos/{id} usando o produtoId recebido na navegação.
+ * Busca um ponto por UUID
+ * GET /api/v1/pontos/{id}
  */
-export async function buscarProdutoPorId(
-  produtoId: string
-): Promise<Ponto | null> {
-  try {
-    return await apiFetch<Ponto>(`/produtos/${produtoId}`);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return null;
-    }
-    throw error;
-  }
+export async function buscarPorId(id: string): Promise<Ponto> {
+  return get<Ponto>(`/api/v1/pontos/${id}`);
 }
 
-export async function buscarPontoPorId(
-  id: string | number
-): Promise<Ponto | null> {
-  return buscarProdutoPorId(String(id));
+/**
+ * Cadastra um novo ponto na API
+ * POST /api/v1/pontos
+ */
+export async function cadastrar(ponto: PontoInput): Promise<Ponto> {
+  return post<Ponto>('/api/v1/pontos', ponto);
 }
+
+/**
+ * Atualiza um ponto existente na API
+ * PUT /api/v1/pontos/{id}
+ */
+export async function editar(id: string, ponto: PontoInput): Promise<Ponto> {
+  return put<Ponto>(`/api/v1/pontos/${id}`, ponto);
+}
+
+/**
+ * Exclui um ponto existente na API
+ * DELETE /api/v1/pontos/{id}
+ */
+export async function excluir(id: string): Promise<void> {
+  return del<void>(`/api/v1/pontos/${id}`);
+}
+
+// Aliases para compatibilidade com chamadas existentes
+export const listarPontos = async (params: { page?: number; size?: number; busca?: string } = {}) => {
+  return buscarPagina({
+    filtro: params.busca,
+    page: params.page,
+    size: params.size,
+  });
+};
+
+export const buscarPontoPorId = buscarPorId;
+export const listarProdutos = listarPontos;
+export const buscarProdutoPorId = buscarPorId;
