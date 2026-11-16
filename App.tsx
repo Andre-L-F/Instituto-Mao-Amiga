@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { RootStackParamList } from './src/types/navigation';
 import ListaPontos from './src/screens/ListaPontos';
 import DetalhePonto from './src/screens/DetalhePonto';
+import CadastroPonto from './src/screens/CadastroPonto';
 import CadastroDoacao from './src/screens/CadastroDoacao';
 import HistoricoDoacoes from './src/screens/HistoricoDoacoes';
 import DetalheDoacao from './src/screens/DetalheDoacao';
@@ -26,6 +27,7 @@ export default function App() {
         >
           <Stack.Screen name="ListaPontos" component={ListaPontos} />
           <Stack.Screen name="DetalhePonto" component={DetalhePonto} />
+          <Stack.Screen name="CadastroPonto" component={CadastroPonto} />
           <Stack.Screen name="CadastroDoacao" component={CadastroDoacao} />
           <Stack.Screen name="HistoricoDoacoes" component={HistoricoDoacoes} />
           <Stack.Screen name="DetalheDoacao" component={DetalheDoacao} />
