@@ -116,7 +116,7 @@ export default function CadastroDoacao({
         const doacaoAtualizada = await editar(doacaoParaEditar.id, payload);
         setMensagem('Doação atualizada com sucesso!');
         setTimeout(() => {
-          navigation.navigate('DetalheDoacao', { id: doacaoAtualizada.id, doacao: doacaoAtualizada });
+          navigation.navigate('DetalheDoacao', { id: doacaoAtualizada.id });
         }, 500);
       } else {
         await cadastrar(payload);
