@@ -9,6 +9,7 @@ export type RootStackParamList = {
   CadastroDoacao: { doacaoParaEditar?: Doacao } | undefined;
   HistoricoDoacoes: undefined;
   DetalheDoacao: { id: string };
+  MeusPontos: undefined;
 };
 
 export type ListaPontosScreenProps = NativeStackScreenProps<
@@ -39,4 +40,9 @@ export type HistoricoDoacoesScreenProps = NativeStackScreenProps<
 export type DetalheDoacaoScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'DetalheDoacao'
+>;
+
+export type MeusPontosScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'MeusPontos'
 >;

@@ -14,6 +14,10 @@ import type { ListaPontosScreenProps } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
 import { buscarPagina } from '../services/pontosService';
 import { carregarBusca, salvarBusca } from '../services/doacoesStorage';
+import {
+  obterFavoritosIds,
+  alternarFavorito,
+} from '../services/favoritosService';
 import styles from '../styles/styles';
 
 const ITENS_POR_PAGINA = 10;
@@ -29,7 +33,33 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [totalElementos, setTotalElementos] = useState(0);
 
+  const [favoritosIds, setFavoritosIds] = useState<string[]>([]);
+
   const buscaInicialCarregada = useRef(false);
+
+  const carregarFavoritos = useCallback(async () => {
+    try {
+      const ids = await obterFavoritosIds();
+      setFavoritosIds(ids);
+    } catch (e) {
+      console.log('Erro ao carregar favoritos:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregarFavoritos();
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarFavoritos();
+    });
+    return unsubscribe;
+  }, [navigation, carregarFavoritos]);
+
+  const alternarFavoritoPonto = async (id: string) => {
+    const foiFavoritado = await alternarFavorito(id);
+    setFavoritosIds((prev) =>
+      foiFavoritado ? [...prev, id] : prev.filter((item) => item !== id)
+    );
+  };
 
   // Busca a primeira página de dados pela API com filtro
   const carregarPrimeiraPagina = useCallback(async (termoBusca: string) => {
@@ -165,7 +195,16 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
               style={styles.botaoHistorico}
               onPress={() => navigation.navigate('HistoricoDoacoes')}
             >
-              <Text style={styles.textoBotao}>Minhas doações</Text>
+              <Text style={styles.textoBotao}>Minhas doações (API)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.botaoHistorico, { backgroundColor: '#E8F5E9', borderColor: '#2E7D32', borderWidth: 1 }]}
+              onPress={() => navigation.navigate('MeusPontos')}
+            >
+              <Text style={[styles.textoBotao, { color: '#2E7D32' }]}>
+                ★ Meus pontos favoritos ({favoritosIds.length})
+              </Text>
             </TouchableOpacity>
 
             <TextInput
@@ -207,29 +246,82 @@ export default function ListaPontos({ navigation }: ListaPontosScreenProps) {
             )}
           </View>
         }
-        renderItem={({ item }: { item: Ponto }) => (
-          <TouchableOpacity
-            style={styles.item}
-            onPress={() => navigation.navigate('DetalhePonto', { id: item.id })}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.nome}>{item.nome}</Text>
+        renderItem={({ item }: { item: Ponto }) => {
+          const favoritado = favoritosIds.includes(item.id);
+          return (
+            <View style={styles.item}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <TouchableOpacity
+                  style={{ flex: 1, paddingRight: 8 }}
+                  onPress={() => navigation.navigate('DetalhePonto', { id: item.id })}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.nome}>{item.nome}</Text>
 
-            <Text style={styles.endereco}>
-              📍 {item.endereco}{item.bairro ? ` - ${item.bairro}` : ''}
-            </Text>
+                  <Text style={styles.endereco}>
+                    📍 {item.endereco}{item.bairro ? ` - ${item.bairro}` : ''}
+                  </Text>
 
-            <Text style={styles.horario}>🕐 {item.horario}</Text>
+                  <Text style={styles.horario}>🕐 {item.horario}</Text>
 
-            {item.tipo ? (
-              <Text style={[styles.texto, { color: item.tipo.toLowerCase().includes('coleta') ? '#2E7D32' : '#E65100', fontWeight: '600', marginTop: 4 }]}>
-                🏷️ Tipo: {item.tipo}
-              </Text>
-            ) : null}
+                  {item.tipo ? (
+                    <Text
+                      style={[
+                        styles.texto,
+                        {
+                          color: item.tipo.toLowerCase().includes('coleta')
+                            ? '#2E7D32'
+                            : '#E65100',
+                          fontWeight: '600',
+                          marginTop: 4,
+                        },
+                      ]}
+                    >
+                      🏷️ Tipo: {item.tipo}
+                    </Text>
+                  ) : null}
 
-            <Text style={styles.verDetalhes}>Toque para ver detalhes →</Text>
-          </TouchableOpacity>
-        )}
+                  <Text style={styles.verDetalhes}>Toque para ver detalhes →</Text>
+                </TouchableOpacity>
+
+                {/* Botão de favorito (♡/♥) com área de toque mínima de 44x44 */}
+                <TouchableOpacity
+                  style={{
+                    minWidth: 44,
+                    minHeight: 44,
+                    width: 44,
+                    height: 44,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: 22,
+                    backgroundColor: favoritado ? '#FFEBEE' : '#F5F5F5',
+                  }}
+                  onPress={() => alternarFavoritoPonto(item.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'
+                  }
+                >
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      color: favoritado ? '#D32F2F' : '#757575',
+                      lineHeight: 28,
+                    }}
+                  >
+                    {favoritado ? '♥' : '♡'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }}
         ListFooterComponent={
           carregandoMais ? (
             <View style={{ paddingVertical: 16 }}>

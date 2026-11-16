@@ -11,6 +11,7 @@ import CadastroPonto from './src/screens/CadastroPonto';
 import CadastroDoacao from './src/screens/CadastroDoacao';
 import HistoricoDoacoes from './src/screens/HistoricoDoacoes';
 import DetalheDoacao from './src/screens/DetalheDoacao';
+import MeusPontos from './src/screens/MeusPontos';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,6 +32,7 @@ export default function App() {
           <Stack.Screen name="CadastroDoacao" component={CadastroDoacao} />
           <Stack.Screen name="HistoricoDoacoes" component={HistoricoDoacoes} />
           <Stack.Screen name="DetalheDoacao" component={DetalheDoacao} />
+          <Stack.Screen name="MeusPontos" component={MeusPontos} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
